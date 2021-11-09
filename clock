@@ -1,0 +1,150 @@
+substitutions:
+  devicename: clock
+  upper_devicename: clock
+
+
+esphome:
+  name: "${devicename}"
+  platform: ESP8266
+  board: d1_mini
+
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret api_pass
+#Включаем загрузку по воздуху
+ota:
+  password: !secret ota_pass
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+
+# Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${devicename} Fallback"
+    password: !secret back_pass
+
+captive_portal:
+
+i2c:
+   sda: D2
+   scl: D1
+   scan: true
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: ${upper_devicename} IP Address
+    ssid:
+      name: ${upper_devicename} SSID
+    mac_address:
+      name: ${upper_devicename} Mac
+
+sensor:
+  - platform: aht10
+    temperature:
+      name: ${upper_devicename} T
+      id: bedroom_t
+      filters:
+        - calibrate_linear:
+          - 0.0 -> 0.0
+          - 28.0 -> 23.7
+    humidity:
+      name: ${upper_devicename} humidity
+      id: bedroom_h
+      filters:
+        - calibrate_linear:
+          - 0.0 -> 0.0
+          - 36.0 -> 42
+    update_interval: 60s
+    address: 0x38
+  
+  - platform: template
+    name: brightness_clock
+    id: brightness
+    lambda: |-
+      if (id(i_clock).state > 900) {
+        return 7;
+      } else {
+       if (id(i_clock).state > 600) {
+        return 6;
+      } else {
+       if (id(i_clock).state > 300) {
+        return 5;
+      } else {
+       if (id(i_clock).state > 100) {
+        return 4;
+      } else {  
+       if (id(i_clock).state > 75) {
+        return 3;
+      } else {
+       if (id(i_clock).state > 50) {
+        return 2;
+      } else {
+      if (id(i_clock).state > 25) {
+        return 1;
+      } else {
+       return 0;}}}}}}}
+    update_interval: 5s
+    
+  - platform: bh1750
+    name: "Illuminance clock"
+    id: i_clock
+    address: 0x23
+    measurement_duration: 69
+    update_interval: 10s
+    
+  - platform: sgp30
+    eco2:
+      name: ${upper_devicename} eCO2
+      accuracy_decimals: 1
+      id: bedroom_eCO2
+    tvoc:
+      name: ${upper_devicename} TVOC
+      accuracy_decimals: 1
+      id: bedroom_TVOC
+    store_baseline: yes
+    address: 0x58
+    update_interval: 1s
+    compensation:
+      temperature_source: bedroom_t
+      humidity_source: bedroom_h
+#    baseline:
+#      eco2_baseline: 0x90B4
+#      tvoc_baseline: 0x941F
+  - platform: wifi_signal
+    name: ${upper_devicename} Wifi
+    update_interval: 60s   
+
+display:
+    platform: tm1637
+    id: tm1637_display
+
+    clk_pin: D3
+    dio_pin: D4
+    update_interval: 500ms
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      static int i = 0;
+      i++;
+      if ((i % 2) == 0)
+        it.strftime("%H.%M", id(homeassistant_time).now());
+      else
+        it.strftime("%H%M", id(homeassistant_time).now());   
+
+            
+# Enable Web server.
+#Вэбсервер для локального контроля прибора (необязательно)
+web_server:
+  port: 80
+  auth:
+    username: !secret web_user
+    password: !secret web_pass
+
+# Sync time with Home Assistant.
+time:
+  - platform: homeassistant
+    id: homeassistant_time
