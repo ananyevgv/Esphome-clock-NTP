@@ -34,6 +34,11 @@ i2c:
    sda: D2
    scl: D1
    scan: true
+spi:
+  clk_pin: D5
+  mosi_pin: D7
+
+
 text_sensor:
   - platform: wifi_info
     ip_address:
@@ -112,15 +117,23 @@ sensor:
     compensation:
       temperature_source: bedroom_t
       humidity_source: bedroom_h
-#    baseline:
-#      eco2_baseline: 0x90B4
-#      tvoc_baseline: 0x941F
+    baseline:
+      eco2_baseline: 0x9BF1
+      tvoc_baseline: 0x97FD
   - platform: wifi_signal
     name: ${upper_devicename} Wifi
     update_interval: 60s   
 
 display:
-    platform: tm1637
+  - platform: max7219
+    cs_pin: D8
+    num_chips: 1
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      it.printf("0.0f.C", id(bedroom_t).state);
+      it.printf("4.0f", id(bedroom_h).state);
+            
+  - platform: tm1637
     id: tm1637_display
 
     clk_pin: D3
@@ -131,11 +144,11 @@ display:
       static int i = 0;
       i++;
       if ((i % 2) == 0)
-        it.strftime("%H.%M", id(homeassistant_time).now());
+        it.strftime("%H.%M", id(sntp_time).now());
       else
-        it.strftime("%H%M", id(homeassistant_time).now());   
+        it.strftime("%H%M", id(sntp_time).now());  
+       
 
-            
 # Enable Web server.
 #Вэбсервер для локального контроля прибора (необязательно)
 web_server:
@@ -148,3 +161,8 @@ web_server:
 time:
   - platform: homeassistant
     id: homeassistant_time
+
+  - platform: sntp
+    id: sntp_time
+    timezone: "MSK-3MSD,M3.5.0/2,M10.5.0/3"
+    servers: 192.168.xxx.xxx
