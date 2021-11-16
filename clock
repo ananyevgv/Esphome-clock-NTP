@@ -35,7 +35,7 @@ i2c:
    scl: D1
    scan: true
 spi:
-  clk_pin: D5
+  clk_pin: D6
   mosi_pin: D7
 
 
@@ -130,8 +130,8 @@ display:
     num_chips: 1
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
-      it.printf("0.0f.C", id(bedroom_t).state);
-      it.printf("4.0f", id(bedroom_h).state);
+      it.printf( "%.1f.C" , id(bedroom_t).state);
+      it.printf( 4, "%.1fh" , id(bedroom_h).state);
             
   - platform: tm1637
     id: tm1637_display
@@ -165,4 +165,5 @@ time:
   - platform: sntp
     id: sntp_time
     timezone: "MSK-3MSD,M3.5.0/2,M10.5.0/3"
-    servers: 192.168.xxx.xxx
+    servers: 192.168.88.62
+
