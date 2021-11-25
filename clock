@@ -34,10 +34,6 @@ i2c:
    sda: D2
    scl: D1
    scan: true
-spi:
-  clk_pin: D6
-  mosi_pin: D7
-
 
 text_sensor:
   - platform: wifi_info
@@ -124,30 +120,39 @@ sensor:
     name: ${upper_devicename} Wifi
     update_interval: 60s   
 
+#   it.printf( 4, "%.1fh" , id(bedroom_h).state);        
 display:
-  - platform: max7219
-    cs_pin: D8
-    num_chips: 1
-    lambda: |-
-      it.set_intensity(static_cast<int>(id(brightness).state));
-      it.printf( "%.1f.C" , id(bedroom_t).state);
-      it.printf( 4, "%.1fh" , id(bedroom_h).state);
-            
-  - platform: tm1637
-    id: tm1637_display
 
-    clk_pin: D3
-    dio_pin: D4
+  - platform: tm1637
+    id: tm1637_c
+    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    dio_pin: D6 
     update_interval: 500ms
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
+      it.strftime("%H%M", id(sntp_time).now());  
       static int i = 0;
       i++;
       if ((i % 2) == 0)
         it.strftime("%H.%M", id(sntp_time).now());
       else
         it.strftime("%H%M", id(sntp_time).now());  
-       
+  - platform: tm1637
+    id: tm1637_t
+    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    dio_pin: D7
+    update_interval: 500ms
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      it.printf( "%0.0f.C" , id(bedroom_t).state);
+  - platform: tm1637
+    id: tm1637_h
+    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    dio_pin: D8
+    update_interval: 500ms
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      it.printf( "%.0f." , id(bedroom_h).state);     
 
 # Enable Web server.
 #Вэбсервер для локального контроля прибора (необязательно)
@@ -166,4 +171,5 @@ time:
     id: sntp_time
     timezone: "MSK-3MSD,M3.5.0/2,M10.5.0/3"
     servers: 192.168.xxx.xxx
+
 
