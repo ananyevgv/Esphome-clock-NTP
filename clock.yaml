@@ -120,9 +120,8 @@ sensor:
     name: ${upper_devicename} Wifi
     update_interval: 60s   
 
-#   it.printf( 4, "%.1fh" , id(bedroom_h).state);        
+  
 display:
-
   - platform: tm1637
     id: tm1637_c
     clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
@@ -144,7 +143,7 @@ display:
     update_interval: 500ms
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
-      it.printf( "%0.0f.C" , id(bedroom_t).state);
+      it.printf( "%0.0f.c" , id(bedroom_t).state);
   - platform: tm1637
     id: tm1637_h
     clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
@@ -152,7 +151,7 @@ display:
     update_interval: 500ms
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
-      it.printf( "%.0f." , id(bedroom_h).state);     
+      it.printf( "%.0f ." , id(bedroom_h).state);     
 
 # Enable Web server.
 #Вэбсервер для локального контроля прибора (необязательно)
