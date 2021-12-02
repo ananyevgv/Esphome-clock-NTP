@@ -1,0 +1,214 @@
+substitutions:
+  devicename: bme280
+  upper_devicename: holl
+
+esphome:
+  name: "${devicename}"
+  platform: ESP8266
+  board: d1_mini
+
+
+# Enable logging
+logger:
+   baud_rate: 0
+# Enable Home Assistant API
+api:
+  password: !secret api_pass
+#Включаем загрузку по воздуху
+ota:
+  password: !secret ota_pass
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${devicename} Fallback"
+    password: !secret back_pass
+
+captive_portal:
+
+uart:
+  rx_pin: 3
+  tx_pin: 1
+  baud_rate: 9600
+
+modbus:
+
+i2c:
+   sda: D2
+   scl: D1
+   scan: true
+
+dallas:
+  - pin: D3
+remote_transmitter:
+  pin: D5
+  carrier_duty_percent: 50%
+  
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: ${upper_devicename} IP Address
+    ssid:
+      name: ${upper_devicename} SSID
+    mac_address:
+      name: ${upper_devicename} Mac
+
+
+
+sensor:
+  - platform: bme280
+    temperature:
+      name: ${upper_devicename} T
+      id: bme280_temperature
+      filters:
+      - calibrate_linear:
+        - 0.0 -> 0.0
+        - 28.0 -> 25.0
+      oversampling: 16x
+    pressure:
+      name: ${upper_devicename} pressure
+      id: bme280_pressure
+      filters:
+        - lambda: return x * 0.750062;
+      unit_of_measurement: 'mmHg'
+    humidity:
+      name: ${upper_devicename} humidity
+      id: bme280_humidity
+      filters:
+      - calibrate_linear:
+        - 0.0 -> 0.0
+        - 36.0 -> 38.5
+    address: 0x76
+    update_interval: 60s
+    
+  - platform: dallas
+    index: 0
+    name: ${upper_devicename} pol_t
+    id: t_pol_h
+    filters:
+    - calibrate_linear:
+      - 0.0 -> 0.0
+      - 25.0 -> 24.0
+      
+  - platform: wifi_signal
+    name: ${upper_devicename} Wifi
+    update_interval: 60s   
+    
+  - platform: pzemac
+    current:
+      name: "PZEM-004T V3 Current"
+    voltage:
+      name: "PZEM-004T V3 Voltage"
+    energy:
+      name: "PZEM-004T V3 Energy"
+      filters:
+        - lambda: return x * 0.001 + 34605;
+      unit_of_measurement: "kWh"
+    power:
+      name: "PZEM-004T V3 Power"
+    frequency:
+      name: "PZEM-004T V3 Frequency"
+    power_factor:
+      name: "PZEM-004T V3 Power Factor"
+    update_interval: 60s
+    
+  - platform: template
+    name: "${upper_devicename} brightness"
+    id: brightness
+    lambda: |-
+      if (id(i_clock).state > 900) {
+        return 7;
+      } else {
+       if (id(i_clock).state > 600) {
+        return 6;
+      } else {
+       if (id(i_clock).state > 300) {
+        return 5;
+      } else {
+       if (id(i_clock).state > 100) {
+        return 4;
+      } else {  
+       if (id(i_clock).state > 75) {
+        return 3;
+      } else {
+       if (id(i_clock).state > 50) {
+        return 2;
+      } else {
+      if (id(i_clock).state > 25) {
+        return 1;
+      } else {
+       return 0;}}}}}}}
+    update_interval: 5s
+    
+  - platform: bh1750
+    name: "${upper_devicename} Illuminance"
+    id: i_clock
+    address: 0x23
+    measurement_duration: 69
+    update_interval: 10s
+
+  - platform: adc
+    pin: VCC
+    name: "${upper_devicename} VCC"
+
+display:
+  - platform: tm1637
+    id: tm1637_c
+    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    dio_pin: D6
+    update_interval: 500ms
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      static int i = 0;
+      i++;
+      if ((i % 2) == 0)
+        it.strftime("%H.%M", id(homeassistant_time).now());
+      else
+        it.strftime("%H%M", id(homeassistant_time).now());  
+  - platform: tm1637
+    id: tm1637_t
+    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    dio_pin: D7
+    update_interval: 500ms
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      it.printf( "%0.0f.c" , id(bme280_temperature).state);
+  - platform: tm1637
+    id: tm1637_h
+    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    dio_pin: D4
+    update_interval: 500ms
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      it.printf( "%.0f ." , id(bme280_humidity).state);     
+    
+switch:
+  - platform: template
+    name: ${upper_devicename} Power LG
+    icon: "mdi:television"
+    turn_on_action:
+      - remote_transmitter.transmit_lg:
+         data: 0x20DF10EF # power on/off
+         nbits: 32
+
+
+# Enable Web server.
+#Вэбсервер для локального контроля прибора (необязательно)
+web_server:
+  port: 80
+  auth:
+    username: !secret web_user
+    password: !secret web_pass
+
+# Sync time with Home Assistant.
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    
+#  - platform: sntp
+#    id: sntp_time
+#    timezone: "MSK-3MSD,M3.5.0/2,M10.5.0/3"
+#    servers: 192.168.88.xxx
