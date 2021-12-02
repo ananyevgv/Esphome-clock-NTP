@@ -1,9 +1,9 @@
 Часы с синхронизацией времени и автоматической регулировкой яркости
 ========================
 
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/cloc-f.jpg" height="100" alt="Часы">
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clok-t.jpg" height="100" alt="Обратная сторона">
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/dat.jpg" height="300" alt="Срин датчиков">   
+<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/cloc-f.jpg" height="300" alt="Часы">
+<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clok-t.jpg" height="300" alt="Обратная сторона">
+<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/dat.jpg" height="500" alt="Срин датчиков">   
 Часы с синхронизацией времени и автоматической регулировкой яркости + датчики температуры, влажности, качества воздуха. Основная идея избавится от дополнительных устройст для измерения различных параметров, концепция все в одном устройстве в виде часов. Значек влажности подключен к 3 сегменту 3-го TM1637.
 В следуюших "моделях" планирую использовать 2 TM1637 (задействую 5 и 6 сегмент TM1637)
 
