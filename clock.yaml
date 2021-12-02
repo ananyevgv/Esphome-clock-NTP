@@ -148,7 +148,7 @@ display:
   - platform: tm1637
     id: tm1637_h
     clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
-    dio_pin: D8
+    dio_pin: D5
     update_interval: 500ms
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
