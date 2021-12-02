@@ -1,8 +1,8 @@
 Часы с синхронизацией времени и автоматической регулировкой яркости
 ========================
-![clok](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/cloc-f.jpg)
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/cloc-f.jpg" height="100" alt="Часы">
 
+<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/cloc-f.jpg" height="100" alt="Часы">
+<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/cloc-t.jpg" height="100" alt="Часы">
     
 Часы с синхронизацией времени и автоматической регулировкой яркости + датчики температуры, влажности, качества воздуха. В планах добавить интернет радио.
 
