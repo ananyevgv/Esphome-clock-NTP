@@ -21,6 +21,8 @@ https://aliexpress.ru/item/32649468489.html (esp8266)
 
 https://aliexpress.ru/item/32846977179.html (шилд)
 
+https://aliexpress.ru/item/32910027894.html (шилд2)
+
 https://aliexpress.ru/item/1005001391696335.html (AC-DC)
 
 https://aliexpress.ru/item/32805933184.html (TM1638)
