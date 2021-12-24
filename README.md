@@ -30,6 +30,7 @@
 
 Wemos D1 mini pin D8  для подключения TM1637 и MAX7218 не использовать! 
 
+На home assistant установлен адон Chrony https://github.com/hassio-addons/addon-chrony 
 
 Сылки на компоненты
 ========================
