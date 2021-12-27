@@ -1,0 +1,18 @@
+utility_meter: 
+  drink_water_yearly: # Годовое потребление питьевой воды
+    source: sensor.kitchen_l
+    cycle: yearly
+    tariffs:
+      - single  
+          
+  drink_water_monthly: # Месячное потребление питьевой воды
+    source: sensor.kitchen_l
+    cycle: monthly
+    tariffs:
+      - single  
+
+  drink_water_daily: # Дневное потребление питьевой воды
+    source: sensor.kitchen_l
+    cycle: daily
+    tariffs:
+      - single  
