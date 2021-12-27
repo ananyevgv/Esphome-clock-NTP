@@ -1,0 +1,185 @@
+substitutions:
+  devicename: bedroom
+  upper_devicename: bedroom
+
+esphome:
+  name: "${devicename}"
+  platform: ESP8266
+  board: d1_mini
+
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret api_pass
+#Включаем загрузку по воздуху
+ota:
+  password: !secret ota_pass
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+
+# Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${devicename} Fallback"
+    password: !secret back_pass
+
+captive_portal:
+
+sun:
+  latitude: 3.999992° #указать свои координаты
+  longitude: 3.922012° #указать свои координаты
+  
+i2c:
+   sda: D2
+   scl: D1
+   scan: true
+
+
+
+remote_transmitter:
+  pin: D5
+  carrier_duty_percent: 50%
+  
+ 
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${upper_devicename} IP Address"
+    ssid:
+      name: "${upper_devicename} SSID"
+    mac_address:
+      name: "${upper_devicename} Mac"
+
+sensor:
+  - platform: aht10
+    temperature:
+      name: "${upper_devicename} T"
+      id: bedroom_t
+      filters:
+        - calibrate_linear:
+          - 0.0 -> 0.0
+          - 28.0 -> 23.7
+    humidity:
+      name: "${upper_devicename} humidity"
+      id: bedroom_h
+      filters:
+        - calibrate_linear:
+          - 0.0 -> 0.0
+          - 36.0 -> 42
+    update_interval: 60s
+    address: 0x38
+  
+  - platform: template
+    name: "${upper_devicename} brightness"
+    id: brightness
+    lambda: |-
+      if (id(i_clock).state > 900) {
+        return 7;
+      } else {
+       if (id(i_clock).state > 600) {
+        return 6;
+      } else {
+       if (id(i_clock).state > 300) {
+        return 5;
+      } else {
+       if (id(i_clock).state > 100) {
+        return 4;
+      } else {  
+       if (id(i_clock).state > 75) {
+        return 3;
+      } else {
+       if (id(i_clock).state > 50) {
+        return 2;
+      } else {
+      if (id(i_clock).state > 25) {
+        return 1;
+      } else {
+       return 0 ;}}}}}}}
+    update_interval: 5s
+    
+  - platform: bh1750
+    name: "${upper_devicename} Illuminance"
+    id: i_clock
+    address: 0x23
+    measurement_duration: 69
+    update_interval: 10s
+    
+  - platform: sgp30
+    eco2:
+      name: ${upper_devicename} eCO2
+      accuracy_decimals: 1
+      id: bedroom_eCO2
+    tvoc:
+      name: ${upper_devicename} TVOC
+      accuracy_decimals: 1
+      id: bedroom_TVOC
+    store_baseline: yes
+    address: 0x58
+    update_interval: 1s
+    compensation:
+      temperature_source: bedroom_t
+      humidity_source: bedroom_h
+  #  baseline:
+   #   eco2_baseline: 0xFFA5
+   #   tvoc_baseline: 0xFFF0
+      
+  - platform: wifi_signal
+    name: ${upper_devicename} Wifi
+    update_interval: 60s
+    
+  - platform: adc
+    pin: VCC
+    name: "${upper_devicename} VCC"
+
+  - platform: sun
+    name: "${upper_devicename} Elevation"
+    type: elevation
+    id: elevation
+    
+display:
+  - platform: tm1637
+    id: tm1637_c
+    clk_pin: D0
+    dio_pin: D6
+    update_interval: 500ms
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      static int i = 0;
+      i++;
+      if ((i % 2) == 0)
+        it.strftime("%H.%M", id(sntp_time).now());
+      else
+        it.strftime("%H%M", id(sntp_time).now()); 
+      it.printf(4,"%.0f." , id(bedroom_h).state);
+      
+  - platform: tm1637
+    id: tm1637_t
+    clk_pin: D0
+    dio_pin: D7
+    update_interval: 500ms
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      it.printf( "%0.0f.c" , id(bedroom_t).state);
+      if ((id(elevation).state) > 0)
+        it.printf(3,"~");
+#      else
+#        it.printf(3,"_");       
+
+# Enable Web server.
+#Вэбсервер для локального контроля прибора (необязательно)
+web_server:
+  port: 80
+  auth:
+    username: !secret web_user
+    password: !secret web_pass
+
+# Sync time with Home Assistant.
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: "MSK-3MSD,M3.5.0/2,M10.5.0/3"
+    servers: 192.168.xx.xx
