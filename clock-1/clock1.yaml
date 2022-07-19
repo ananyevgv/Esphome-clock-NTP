@@ -4,17 +4,14 @@ substitutions:
 
 esphome:
   name: "${devicename}"
-  platform: ESP8266
-  board: d1_mini
+esp32:
+ board: wemos_d1_mini32 #lolin_s2_mini
 
-
-# Enable logging
 logger:
 
-# Enable Home Assistant API
 api:
   password: !secret api_pass
-#Включаем загрузку по воздуху
+  
 ota:
   password: !secret ota_pass
 
@@ -22,7 +19,7 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_pass
 
-# Enable fallback hotspot (captive portal) in case wifi connection fails
+
   ap:
     ssid: "${devicename} Fallback"
     password: !secret back_pass
@@ -30,18 +27,18 @@ wifi:
 captive_portal:
 
 sun:
-  latitude: 3.999992° #указать свои координаты
-  longitude: 3.922012° #указать свои координаты
+  latitude: xxxx
+  longitude: xxxx
   
 i2c:
-   sda: D2
-   scl: D1
+   sda: D2 #21
+   scl: D1 #22
    scan: true
 
 
 
 remote_transmitter:
-  pin: D5
+  pin: D5 #18
   carrier_duty_percent: 50%
   
  
@@ -77,25 +74,25 @@ sensor:
     name: "${upper_devicename} brightness"
     id: brightness
     lambda: |-
-      if (id(i_clock).state > 900) {
+      if (id(i_clock).state > 24) {
         return 7;
       } else {
-       if (id(i_clock).state > 600) {
+       if (id(i_clock).state > 20) {
         return 6;
       } else {
-       if (id(i_clock).state > 300) {
+       if (id(i_clock).state > 16) {
         return 5;
       } else {
-       if (id(i_clock).state > 100) {
+       if (id(i_clock).state > 12) {
         return 4;
       } else {  
-       if (id(i_clock).state > 75) {
+       if (id(i_clock).state > 8) {
         return 3;
       } else {
-       if (id(i_clock).state > 50) {
+       if (id(i_clock).state > 4) {
         return 2;
       } else {
-      if (id(i_clock).state > 25) {
+      if (id(i_clock).state > 1) {
         return 1;
       } else {
        return 0 ;}}}}}}}
@@ -105,7 +102,6 @@ sensor:
     name: "${upper_devicename} Illuminance"
     id: i_clock
     address: 0x23
-    measurement_duration: 69
     update_interval: 10s
     
   - platform: sgp30
@@ -113,27 +109,32 @@ sensor:
       name: ${upper_devicename} eCO2
       accuracy_decimals: 1
       id: bedroom_eCO2
+      filters:
+       - max:
+          window_size: 4
+          send_every: 60
     tvoc:
       name: ${upper_devicename} TVOC
       accuracy_decimals: 1
       id: bedroom_TVOC
+      filters:
+       - max:
+          window_size: 4
+          send_every: 60
     store_baseline: yes
     address: 0x58
     update_interval: 1s
     compensation:
       temperature_source: bedroom_t
       humidity_source: bedroom_h
-  #  baseline:
-   #   eco2_baseline: 0xFFA5
-   #   tvoc_baseline: 0xFFF0
+    baseline:
+      eco2_baseline: 0xXXXX
+      tvoc_baseline: 0xXXXX
       
   - platform: wifi_signal
     name: ${upper_devicename} Wifi
     update_interval: 60s
     
-  - platform: adc
-    pin: VCC
-    name: "${upper_devicename} VCC"
 
   - platform: sun
     name: "${upper_devicename} Elevation"
@@ -143,8 +144,8 @@ sensor:
 display:
   - platform: tm1637
     id: tm1637_c
-    clk_pin: D0
-    dio_pin: D6
+    clk_pin: D0 #26
+    dio_pin: D6 #19
     update_interval: 500ms
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
@@ -158,8 +159,8 @@ display:
       
   - platform: tm1637
     id: tm1637_t
-    clk_pin: D0
-    dio_pin: D7
+    clk_pin: D0 #26
+    dio_pin: D7 #23
     update_interval: 500ms
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
@@ -168,18 +169,73 @@ display:
         it.printf(3,"~");
 #      else
 #        it.printf(3,"_");       
+media_player:
+  - platform: i2s_audio
+    name: ${devicename}
+    dac_type: external
+    i2s_lrclk_pin: 27
+    i2s_dout_pin: 25
+    i2s_bclk_pin: 32
+    mode: mono
+    id: clok
+    mute_pin:
+      number: 12 # GAIN Connected to VDD 100kΩ resistor 3db(6db VDD) Connected to GND 100kΩ resistor 15db (12db GND)
+      inverted: true
 
-# Enable Web server.
-#Вэбсервер для локального контроля прибора (необязательно)
+switch: 
+  - platform: gpio
+    pin:
+      number: 2 # internal
+      inverted: false
+    id: ledRF
+  - platform: template
+    name: RF Power Button1
+    turn_on_action:
+      - switch.turn_on: ledRF
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: '0000101001101001001001000'
+          protocol: 1
+          repeat: 
+            times: 2
+            wait_time: 20ms
+      - switch.turn_off: ledRF
+  - platform: template
+    name: RF Power Button2
+    turn_on_action:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: '0101110111000111111100000'
+          protocol: 1
+          repeat: 
+            times: 2
+            wait_time: 20ms
+  - platform: template
+    name: RF Power Button3
+    turn_on_action:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: '0101110111000111001100000'
+          protocol: 1
+          repeat: 
+            times: 2
+            wait_time: 20ms
+  - platform: template
+    name: RF Power Button OFF
+    turn_on_action:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: '0101110111000111110000000'
+          protocol: 1
+          repeat: 
+            times: 2
+            wait_time: 20ms
+            
+
 web_server:
   port: 80
   auth:
     username: !secret web_user
     password: !secret web_pass
 
-# Sync time with Home Assistant.
 time:
   - platform: sntp
     id: sntp_time
-    timezone: "MSK-3MSD,M3.5.0/2,M10.5.0/3"
-    servers: 192.168.xx.xx
+    timezone: "MSK-2MSD,M3.5.0/2,M10.5.0/3"
+    servers: 192.168.88.xx
