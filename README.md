@@ -38,6 +38,8 @@ Wemos D1 mini pin D8  для подключения TM1637 и MAX7218 не ис�
 ========================
 https://github.com/cyberjunky/jukebox-card
 
+https://github.com/esphome/media-players
+
 https://aliexpress.ru/item/1005002292394381.html (часы которые переделывал)
 
 https://aliexpress.ru/item/32649468489.html (esp8266)
