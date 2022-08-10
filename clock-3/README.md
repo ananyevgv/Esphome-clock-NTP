@@ -20,3 +20,5 @@ https://modkam.ru/2018/09/13/shljuz-opentherm-versija-2/
 https://modkam.ru/2017/12/14/shljuz-opentherm/
 
 https://github.com/oxan/esphome-stream-server
+
+https://github.com/basnijholt/addon-otmonitor
