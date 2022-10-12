@@ -5,9 +5,6 @@
 | ![clock-1](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-1/1639051819484.jpg) | ![clock-2](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-2/1639051819490.jpg) | ![clock-3](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/33.jpg) |
 
 
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/cloc-f.jpg" height="300" alt="Часы">
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clok-t.jpg" height="300" alt="Обратная сторона">
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/dat.jpg" height="500" alt="Срин датчиков">   
 
 Основная идея избавится от дополнительных устройств для измерения различных параметров, концепция все в одном устройстве в виде часов. 
 На фото clok2. В китайских часах дисплеи стоят к верх ногами, пришлось переворачивать т.к точка на часах попадала не туда.
