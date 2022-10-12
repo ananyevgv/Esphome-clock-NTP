@@ -1,5 +1,9 @@
 Часы с синхронизацией времени и автоматической регулировкой яркости
 ========================
+| clock-1                                                    | clock-2                                                   | clock-3                                    |
+|------------------------------------------------------------|-----------------------------------------------------------|--------------------------------------------|
+| ![clock-1](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-1/1639051819484.jpg) | ![clock-2](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-2/1639051819490.jpg) | ![clock-3](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/33.jpg) |
+
 
 <img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/cloc-f.jpg" height="300" alt="Часы">
 <img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clok-t.jpg" height="300" alt="Обратная сторона">
