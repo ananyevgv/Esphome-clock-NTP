@@ -1,11 +1,11 @@
 substitutions:
-  devicename: kitchen
+  devicename: "kitchen"
   upper_devicename: kitchen
 
 
 esphome:
   name: "${devicename}"
-  platform: ESP8266
+esp8266:
   board: d1_mini
 
 
@@ -21,20 +21,14 @@ ota:
 
 wifi:
   ssid: !secret wifi_ssid
-  password: !secret wifi_pass
+  password: !secret wifi_password
 
 # Enable fallback hotspot (captive portal) in case wifi connection fails
-  ap:
-    ssid: "${devicename} Fallback"
-    password: !secret back_pass
+#  ap:
+#    ssid: "${devicename} Fallback"
+#    password: !secret back_pass
 
-captive_portal:
-
-uart:
-   id: uart_bus
-   rx_pin: 3
-   tx_pin: 1
-   baud_rate: 9600
+#captive_portal:
 
 i2c:
    sda: D2
@@ -47,46 +41,48 @@ spi:
   
 dallas:
   - pin: D3
-
 remote_transmitter:
   pin: D5
   carrier_duty_percent: 50%
-  
+
  
 text_sensor:
   - platform: wifi_info
     ip_address:
-      name: "${upper_devicename} IP Address"
+      name: ${upper_devicename} IP Address
+      icon: mdi:ip
     ssid:
-      name: "${upper_devicename} SSID"
+      name: ${upper_devicename} SSID
+      icon: mdi:access-point-network
     mac_address:
-      name: "${upper_devicename} Mac"
+      name: ${upper_devicename} Mac
+      icon: mdi:lan
 
 sensor:
   - platform: dallas
     index: 0
     name: ${upper_devicename} pol_t
     id: t_pol_k
-    filters:
-    - calibrate_linear:
-      - 0.0 -> 0.0
-      - 25.0 -> 24.0
+#    filters:
+#    - calibrate_linear:
+#      - 0.0 -> 0.0
+#      - 25.0 -> 24.0
 
   - platform: aht10
     temperature:
       name: "${upper_devicename} T"
       id: kitchen_t
-      filters:
-        - calibrate_linear:
-          - 0.0 -> 0.0
-          - 28.0 -> 23.7
+#      filters:
+#        - calibrate_linear:
+#          - 0.0 -> 0.0
+#          - 28.0 -> 23.7
     humidity:
       name: "${upper_devicename} humidity"
       id: kitchen_h
-      filters:
-        - calibrate_linear:
-          - 0.0 -> 0.0
-          - 36.0 -> 42
+#      filters:
+#        - calibrate_linear:
+#          - 0.0 -> 0.0
+#          - 36.0 -> 42
     update_interval: 60s
     address: 0x38
   
@@ -94,25 +90,25 @@ sensor:
     name: "${upper_devicename} brightness"
     id: brightness
     lambda: |-
-      if (id(i_clock).state > 900) {
+      if (id(i_clock).state > 15) {
         return 7;
       } else {
-       if (id(i_clock).state > 600) {
+       if (id(i_clock).state > 10) {
         return 6;
       } else {
-       if (id(i_clock).state > 300) {
+       if (id(i_clock).state > 8) {
         return 5;
       } else {
-       if (id(i_clock).state > 100) {
+       if (id(i_clock).state > 6) {
         return 15;
       } else {  
-       if (id(i_clock).state > 75) {
+       if (id(i_clock).state > 4) {
         return 3;
       } else {
-       if (id(i_clock).state > 50) {
+       if (id(i_clock).state > 2) {
         return 2;
       } else {
-      if (id(i_clock).state > 25) {
+      if (id(i_clock).state > 1) {
         return 1;
       } else {
        return 0 ;}}}}}}}
@@ -122,7 +118,6 @@ sensor:
     name: "${upper_devicename} Illuminance"
     id: i_clock
     address: 0x23
-    measurement_duration: 69
     update_interval: 10s
       
   - platform: wifi_signal
@@ -131,7 +126,7 @@ sensor:
 
 
   - platform: pulse_meter
-    pin: D4
+    pin: D7
     unit_of_measurement: 'l/min'
     name: "${devicename} l/min"
     id: potok
@@ -139,41 +134,15 @@ sensor:
     accuracy_decimals: 2
     timeout: 5s
     filters:
-      - multiply: 0.0015151515151515
+      - multiply: 0.0005
     total:
-      name: "${devicename} l"
-      id: water_drink_filter
+      name: "drink_water_filter"
+      id: drink_water_filter
       unit_of_measurement: "L"
+      device_class: water
       accuracy_decimals: 3
       filters:
-        - multiply: 0.0015151515151515 #0.0909090909090909
-#  then:
-  #  - pulse_meter.set_total_pulses:
-  #      id: pulse_meter_id
-    #    value: 12345
-
-    
-  - platform: resistance
-    id: water_resistance
-    sensor: water_sensor
-    configuration: DOWNSTREAM
-    resistor: 51kOhm
-    name: water_resistance
-  - platform: adc
-    id: water_sensor
-    pin: A0
-    update_interval: 5s
-    filters:
-      - multiply: 3.3
-    
-  - platform: ntc
-    sensor: water_resistance
-    calibration:
-      b_constant: 3950
-      reference_temperature: 25°C
-      reference_resistance: 50kOhm
-    name: "${devicename} water T"
-    id: water_t
+        - multiply: 0.0005
 
   - platform: homeassistant
     name: "water_total"
@@ -191,61 +160,31 @@ switch:
 
 display:
   - platform: max7219
-    cs_pin: D7
+    cs_pin: D4
     num_chips: 3
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
       static int i = 0;
       i++;
-      if ((id(potok).state) > 0) {
-        it.printf(4,"4321");
-        it.printf(8,"%.1fL" , id(water_drink_filter).state);
-        it.printf(12,"%.1fc" , id(water_t).state);
-        it.printf(16,"%.1fc" , id(water_t).state);
-        it.printf(20,"%.1fh" , id(kitchen_h).state);
-       
-        if ((i % 2) == 0) 
-          it.strftime("%H.%M", id(sntp_time).now());
-        else 
-          it.strftime("%H%M", id(sntp_time).now()); 
-          
-      } else {
-        it.printf(4,"1234");
-        it.printf(8,"%.1fL" , id(drink_water_yearly).state);
         it.strftime(14,"%S", id(sntp_time).now());
         it.printf(16,"%.1fc" , id(kitchen_t).state);
         it.printf(20,"%.1fh" , id(kitchen_h).state);
 
-        if ((i % 2) == 0) 
-          it.strftime("%H.%M", id(sntp_time).now());
+        if ((id(drink_water_yearly).state) > 10000)
+          it.printf(8,"ErrorF");
         else 
-          it.strftime("%H%M", id(sntp_time).now()); 
-      }
+          it.printf(8,"%.1fL" , id(drink_water_yearly).state);
+        if ((i % 2) == 0) 
+          it.strftime(0,"%H.%M", id(sntp_time).now());
+        else 
+          it.strftime(0,"%H%M", id(sntp_time).now()); 
+
 
       
-#Stream server for ESPHome
-#https://github.com/oxan/esphome-stream-server
-external_components:
-  - source: github://oxan/esphome-stream-server
-  
-stream_server:
-   uart_id: uart_bus
-   port: 1234 #4001
-
-# Enable Web server.
-#Вэбсервер для локального контроля прибора (необязательно)
-web_server:
-  port: 80
-  auth:
-    username: !secret web_user
-    password: !secret web_pass
 
 # Sync time with Home Assistant.
 time:
-  - platform: homeassistant
-    id: homeassistant_time
-
   - platform: sntp
     id: sntp_time
-    timezone: "MSK-3MSD,M3.5.0/2,M10.5.0/3"
-    servers: 192.168.xxx.xxx
+    timezone: UTC-3
+    servers: !secret sntp
