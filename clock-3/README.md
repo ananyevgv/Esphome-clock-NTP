@@ -3,7 +3,7 @@
 ========================
 
 
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/33.jpg" height="300" alt="Часы">
+<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/3.jpg" height="300" alt="Часы">
 
 Часы с синхронизацией времени и автоматической регулировкой яркости + датчики температуры, влажности, температуры пола, датчик расхода фильтрованной воды и температуры, ИК пульт (для включения ТВ) + Opentherm для управления котлом.
 
