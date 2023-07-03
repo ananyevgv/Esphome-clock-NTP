@@ -1,0 +1,178 @@
+type: picture-elements
+image: |
+  /local/baxi.jpg
+style: |
+  ha-card {
+    background-color: rgba(0,0,0,0.6);
+  }
+elements:
+  - type: state-label
+    entity: number.ch_setpoint_temperature
+    style:
+      color: '#8df427'
+      font-family: segment7
+      font-size: 15px
+      left: 63%
+      top: 90.5%
+      transform: translate(-100%,-50%)
+  - type: state-icon
+    entity: switch.ch_enabled
+    style:
+      left: 44%
+      top: 90%
+  - type: state-icon
+    entity: binary_sensor.ch_active
+    icon: mdi:radiator
+    style:
+      left: 20%
+      top: 60%
+      '--mdc-icon-size': 100px
+  - type: state-label
+    entity: sensor.dhw_temperature
+    style:
+      color: '#8d1420'
+      font-family: segment7
+      font-size: 15px
+      left: 38%
+      top: 55%
+      transform: translate(-100%,-50%)
+  - type: state-label
+    entity: number.dhw_setpoint_temperature
+    style:
+      color: '#8dF420'
+      font-family: segment7
+      font-size: 15px
+      left: 63%
+      top: 86%
+      transform: translate(-100%,-50%)
+  - type: state-icon
+    entity: binary_sensor.dhw_active
+    icon: mdi:water-boiler
+    style:
+      left: 20%
+      top: 40%
+      '--mdc-icon-size': 100px
+  - type: state-icon
+    entity: switch.dhw_enabled
+    style:
+      left: 44%
+      top: 86%
+  - type: state-label
+    entity: sensor.boiler_temperature
+    style:
+      color: '#8d1420'
+      font-family: segment7
+      font-size: 15px
+      left: 38%
+      top: 73%
+      transform: translate(-100%,-50%)
+  - type: state-label
+    entity: sensor.modulation
+    style:
+      color: '#8d1420'
+      font-family: segment7
+      font-size: 15px
+      left: 87%
+      top: 59%
+      transform: translate(-100%,-50%)
+  - type: state-label
+    entity: sensor.oshibka_kotla
+    style:
+      left: 50%
+      top: 96%
+  - type: state-label
+    entity: sensor.outside_temperature
+    style:
+      left: 20%
+      top: 5%
+  - type: state-label
+    entity: sensor.ch_maximum_temperature
+    prefix: 'ch_max '
+    style:
+      left: 55%
+      top: 65%
+  - type: state-label
+    entity: sensor.ch_minimum_temperature
+    prefix: 'ch_min '
+    style:
+      left: 55%
+      top: 69%
+  - type: state-label
+    entity: sensor.dhw_maximum_temperature
+    prefix: 'dhw_max '
+    style:
+      left: 55%
+      top: 40%
+  - type: state-label
+    entity: sensor.dhw_minimum_temperature
+    prefix: 'dhw_min '
+    style:
+      left: 55%
+      top: 44%
+  - type: state-icon
+    entity: binary_sensor.flame_active
+    icon: mdi:fire
+    style:
+      left: 70%
+      top: 45%
+      '--mdc-icon-size': 100px
+  - type: state-icon
+    icon: mdi:gauge-empty
+    entity: binary_sensor.water_pressure_fault
+    style:
+      top: 88.5%
+      left: 80%
+  - type: state-icon
+    entity: binary_sensor.fault
+    icon: mdi:water-boiler-alert
+    style:
+      top: 50%
+      left: 8%
+  - type: state-icon
+    entity: binary_sensor.lockout_reset
+    icon: mdi:lock-reset
+    style:
+      top: 55%
+      left: 8%
+  - type: state-icon
+    entity: binary_sensor.gas_flame_fault
+    icon: mdi:gas-burner
+    style:
+      top: 60%
+      left: 8%
+  - type: state-icon
+    entity: binary_sensor.diagnostic
+    icon: mdi:face-agent
+    style:
+      top: 65%
+      left: 8%
+  - type: state-icon
+    entity: binary_sensor.service_request
+    icon: mdi:account-wrench
+    style:
+      top: 70%
+      left: 8%
+  - type: state-icon
+    entity: binary_sensor.water_over_temperature_fault
+    icon: mdi:coolant-temperature
+    style:
+      top: 75%
+      left: 8%
+  - type: state-icon
+    entity: binary_sensor.air_pressure_fault
+    icon: mdi:cloud-alert-outline
+    style:
+      left: 8%
+      top: 80%
+  - type: state-icon
+    entity: switch.eco_enabled_2
+    icon: mdi:sprout
+    style:
+      left: 8%
+      top: 90%
+  - type: state-icon
+    icon: mdi:home-thermometer-outline
+    entity: sensor.outside_temperature
+    style:
+      left: 8%
+      top: 5%
