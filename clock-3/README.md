@@ -16,6 +16,8 @@
 
 Подавайте на счетчики 5 В и все будет ОК. При 3.3 даже без потока воды фантомные миллилитры.
 
+https://github.com/ananyevgv/lovelas-HA
+
 используется:
 
 https://github.com/khenderick/esphome-opentherm
