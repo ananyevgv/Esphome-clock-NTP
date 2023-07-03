@@ -23,3 +23,4 @@ https://github.com/ananyevgv/lovelas-HA
 https://github.com/khenderick/esphome-opentherm
 
 https://sprut.ai/article/bezumnyy-dom-delaem-protochnye-filtry-vody-umnymi
+http://torinak.com/7segment     7segment font (c) Jan Bobrowski (OFL)
