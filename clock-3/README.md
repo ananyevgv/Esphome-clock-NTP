@@ -9,7 +9,7 @@
 
 <img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/1639051819479-2.jpg" height="300" alt="Фильтр">
 
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/baxi.jpg" height="300" alt="Котел">
+<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/baxi.jpg" height="300" alt="Котел">
 
 Дисплейный модуль построен на трех MAX7218 общий катод. Задуманы для крепления под кухонный гарнитур. 
 7-ми сегментный 4 разрядный индикатор для отображения времени собран из светодиодов с использованием корпуса от индикатора от старых часов VST. (Часы в процессе отладки). Питание на каждый модуль MAX7218 не стоит включать последовательно, лучше подключать на прямую от ESP особенно "+" (можно получить разную яркость).
