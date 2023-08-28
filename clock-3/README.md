@@ -20,7 +20,7 @@ https://github.com/ananyevgv/lovelas-HA
 
 используется:
 
-https://github.com/khenderick/esphome-opentherm
+
 
 https://sprut.ai/article/bezumnyy-dom-delaem-protochnye-filtry-vody-umnymi
 
