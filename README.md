@@ -1,4 +1,3 @@
-<img src="https://esphome.io/_images/made-for-esphome-black-on-white.svg">
 
 
 Часы с синхронизацией времени и автоматической регулировкой яркости
