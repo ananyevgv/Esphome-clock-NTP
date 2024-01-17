@@ -1,17 +1,30 @@
+##########################################
+##           WEMOS D1 mini              ##
+##  |RS|          |#|     | 1| txuart   ##
+##  |A0|          |#|     | 3| rxuart   ##
+##  |D0| CLK      |#|     |D1| scl      ##
+##  |D5| IR       |#|     |D2| sda      ##
+##  |D6| DIO_1    |#|     |D3| dallas   ##
+##  |D7| DIO_2    |#|     |D4| DIO_3    ##
+##  |D8|          |#|     |GN|          ## 
+##  |3V|          |#|     |5V|          ##
+##########################################
+
+#https://github.com/johnboiles/esphome-hdmi-cec
 substitutions:
-  devicename: bme280
-  upper_devicename: holl
+  name: holl
+  device_description: "Часы холл"
 
 esphome:
-  name: "${devicename}"
-  platform: ESP8266
+  name: "${name}"
+  comment: "${device_description}"
+  platform: esp8266
   board: d1_mini
-
 
 # Enable logging
 logger:
    baud_rate: 0
-# Enable Home Assistant API
+# Enable Home Assistant API бля
 api:
   password: !secret api_pass
 #Включаем загрузку по воздуху
@@ -20,22 +33,23 @@ ota:
 
 wifi:
   ssid: !secret wifi_ssid
-  password: !secret wifi_pass
+  password: !secret wifi_password
 
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
-  ap:
-    ssid: "${devicename} Fallback"
-    password: !secret back_pass
-
-captive_portal:
+#captive_portal:
+#external_components:
+#  - source: github://johnboiles/esphome-hdmi-cec
+#  - source:
+#      type: local
+#      path: my_components
 sun:
-  latitude: 3.533333° #указать свои координаты
-  longitude: 3.3333332° #указать свои координаты
+  latitude: !secret latitude
+  longitude: !secret longitude
   
 uart:
-  rx_pin: 3
   tx_pin: 1
+  rx_pin: 3
   baud_rate: 9600
+  id: pzem
 
 modbus:
 
@@ -44,52 +58,91 @@ i2c:
    scl: D1
    scan: true
 
+bme680_bsec:  
+  address: 0x77
+
 dallas:
   - pin: D3
+
 remote_transmitter:
   pin: D5
   carrier_duty_percent: 50%
-  
+
 text_sensor:
   - platform: wifi_info
     ip_address:
-      name: ${upper_devicename} IP Address
+      name: "${name} IP Address"
+      icon: mdi:ip
     ssid:
-      name: ${upper_devicename} SSID
+      name: "${name} SSID"
+      icon: mdi:access-point-network
     mac_address:
-      name: ${upper_devicename} Mac
+      name: "${name} Mac"
+      icon: mdi:lan
 
+  - platform: bme680_bsec
+    iaq_accuracy:
+      name: "${name} IAQ Accuracy"
 
+  - platform: template
+    name: "${name} IAQ Classification"
+    icon: "mdi:checkbox-marked-circle-outline"
+    lambda: |-
+      uint16_t var = (id(iaq).state);
+      switch (var) {
+        case 0 ... 50: return std::string("Отлично");
+        case 51 ... 100: return std::string("Хорошо");
+        case 101 ... 150: return std::string("Слегка загрязненный");
+        case 151 ... 200: return std::string("Умеренно загрязненный");
+        case 201 ... 250: return std::string("Слегка загрязненный");
+        case 251 ... 300: return std::string("Загрязненный");
+        case 301 ... 350: return std::string("Сильно загрязненный");
+        case 351 ... 500: return std::string("Черезвычайно загрязненный"); 
+        default: return std::string("error");
+      }
 
 sensor:
-  - platform: bme280
+  - platform: bme680_bsec
     temperature:
-      name: ${upper_devicename} T
-      id: bme280_temperature
+      name: "${name} T"
+      id: bme680_t
       filters:
       - calibrate_linear:
         - 0.0 -> 0.0
-        - 28.0 -> 25.0
-      oversampling: 16x
+        - 26.7 -> 24.7
     pressure:
-      name: ${upper_devicename} pressure
-      id: bme280_pressure
-      filters:
-        - lambda: return x * 0.750062;
-      unit_of_measurement: 'mmHg'
+      name: "${name} P"
     humidity:
-      name: ${upper_devicename} humidity
-      id: bme280_humidity
+      name: "${name} H"
+      id: bme680_h
       filters:
       - calibrate_linear:
         - 0.0 -> 0.0
-        - 36.0 -> 38.5
-    address: 0x76
-    update_interval: 60s
-    
+        - 52 -> 54.7
+    iaq:
+      name: "${name} IAQ"
+      id: iaq
+    iaq_accuracy:
+     name: "${name}  IAQ Accuracy"
+    co2_equivalent:
+      name: "${name} CO₂"
+
+    breath_voc_equivalent:
+      name: "${name} VOC"
+    gas_resistance:
+      #Gas resistance in Ω
+      name: "${name}  Gas Resistance"
+      filters:
+        - median
+
+  - platform: absolute_humidity
+    name: "${name} Absolute Humidity"
+    temperature: bme680_t
+    humidity: bme680_h
+ 
   - platform: dallas
     index: 0
-    name: ${upper_devicename} pol_t
+    name: "${name} pol_t"
     id: t_pol_h
     filters:
     - calibrate_linear:
@@ -97,8 +150,17 @@ sensor:
       - 25.0 -> 24.0
       
   - platform: wifi_signal
-    name: ${upper_devicename} Wifi
-    update_interval: 60s   
+    name: "${name} Wifi"
+    update_interval: 60s  
+    id: wifi_signal_db
+    entity_category: "diagnostic"
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "${name} WiFi Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
     
   - platform: pzemac
     current:
@@ -108,7 +170,7 @@ sensor:
     energy:
       name: "PZEM-004T V3 Energy"
       filters:
-        - lambda: return x * 0.001 + 111105 # показания счетчика;
+        - lambda: return x * 0.001 + 41339;
       unit_of_measurement: "kWh"
     power:
       name: "PZEM-004T V3 Power"
@@ -117,54 +179,67 @@ sensor:
     power_factor:
       name: "PZEM-004T V3 Power Factor"
     update_interval: 60s
-    
+    id: PZEM
+
   - platform: template
-    name: "${upper_devicename} brightness"
+    name: "${name} brightness"
     id: brightness
     lambda: |-
-      if (id(i_clock).state > 900) {
-        return 7;
-      } else {
-       if (id(i_clock).state > 600) {
-        return 6;
-      } else {
-       if (id(i_clock).state > 300) {
-        return 5;
-      } else {
-       if (id(i_clock).state > 100) {
-        return 4;
-      } else {  
-       if (id(i_clock).state > 75) {
-        return 3;
-      } else {
-       if (id(i_clock).state > 50) {
-        return 2;
-      } else {
-      if (id(i_clock).state > 25) {
-        return 1;
-      } else {
-       return 0;}}}}}}}
+      uint8_t var = (id(i_clock).state);
+      switch (var) {
+        case 0 : return 0; break;
+        case 1 ... 2: return 1; break;
+        case 3 ... 6: return 2; break;
+        case 7 ... 9: return 3; break;
+        case 10 ... 14: return 4; break;
+        case 15 ... 19: return 5; break;
+        case 20 ... 29: return 6; break;
+        case 30 ... 100: return 7; break;
+        default: return 0; break;
+      }
+    internal: true
     update_interval: 5s
     
   - platform: bh1750
-    name: "${upper_devicename} Illuminance"
+    name: "${name} Illuminance"
     id: i_clock
     address: 0x23
-    measurement_duration: 69
     update_interval: 10s
 
   - platform: adc
     pin: VCC
-    name: "${upper_devicename} VCC"
+    name: "${name} VCC"
 
   - platform: sun
-    name: "${upper_devicename} Elevation"
+    name: "${name} Elevation"
     type: elevation
     id: elevation
+    internal: true
+
+button:
+  - platform: restart
+    name: "${name} Restart"
+
+  - platform: template
+    name: "${name} Power LG"
+    icon: mdi:television-classic
+    on_press:
+      - remote_transmitter.transmit_lg:
+         data: 0x20DF10EF # power on/off
+         nbits: 32
+  - platform: template
+    name: "${name} Reset Power"
+    icon: mdi:file-rotate-left-outline
+    on_press:
+      - pzemac.reset_energy: PZEM
+
+
 display:
   - platform: tm1637
     id: tm1637_c
-    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    clk_pin: 
+      number: D0 #26
+      allow_other_uses: true
     dio_pin: D6
     update_interval: 500ms
     lambda: |-
@@ -177,47 +252,41 @@ display:
         it.strftime("%H%M", id(homeassistant_time).now());  
   - platform: tm1637
     id: tm1637_t
-    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    clk_pin: 
+      number: D0 #26
+      allow_other_uses: true
     dio_pin: D7
     update_interval: 500ms
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
-      it.printf( "%0.0f.c" , id(bme280_temperature).state);
+      it.printf( "%0.0f.c" , id(bme680_t).state);
       if ((id(elevation).state) > 0)
         it.printf(3,"~");
 #      else
 #        it.printf(3,"_"); 
   - platform: tm1637
     id: tm1637_h
-    clk_pin: D0 #Используем одну и туже синхронизацию для трех дисплеев tm1637
+    clk_pin: 
+      number: D0 #26
+      allow_other_uses: true
     dio_pin: D4
     update_interval: 500ms
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
-      it.printf( "%.0f ." , id(bme280_humidity).state);     
+      it.printf( "%.0f ." , id(bme680_h).state);     
     
-switch:
-  - platform: template
-    name: ${upper_devicename} Power LG
-    icon: "mdi:television"
-    turn_on_action:
-      - remote_transmitter.transmit_lg:
-         data: 0x20DF10EF # power on/off
-         nbits: 32
+ #switch:
+#  - platform: uart
+#    uart_id: pzem
+#    name: "pzem reset"
+#    data: [0x01, 0x42, 0x80, 0x11]
 
-
-# Enable Web server.
-#Вэбсервер для локального контроля прибора (необязательно)
-web_server:
-  port: 80
-  auth:
-    username: !secret web_user
-    password: !secret web_pass
-
-# Sync time with Home Assistant.
 time:
-#  - platform: homeassistant
- #   id: homeassistant_time
+  
+  - platform: sntp
+    id: homeassistant_time
+    timezone: UTC-3 #Europe/Moscow
+    servers: !secret sntp
     
   - platform: sntp
     id: homeassistant_time
