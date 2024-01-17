@@ -1,22 +1,53 @@
+#######################################
+##              WEMOS D1 mini        ##
+##  |RS|       |#|     | 1|          ##
+##  |A0|       |#|     | 3| W_OT     ##
+##  |D0| clk   |#|     |D1| scl      ##
+##  |D5| IR    |#|     |D2| sda      ##
+##  |D6| mosi  |#|     |D3| dallas   ##
+##  |D7| PM    |#|     |D4| cs       ##
+##  |D8| R_OT  |#|     |GN|          ## 
+##  |3V|       |#|     |5V|          ##
+#######################################
 substitutions:
-  devicename: "kitchen"
-  upper_devicename: kitchen
-
+  name: kitchen
+  device_description: "Часы кухня"
+  last_name: boiler
+  
 esphome:
-  name: "${devicename}"
+  libraries:
+    - Wire
+    - "climateguard/ClimateGuard RadSens"
+  includes:
+    - RadSens1v2/_CG_RadSens.h  
+  name: "${name}"
+  comment: "${device_description}"
+### BAXI ###
+  on_boot:
+    then:
+      - delay: 2s
+      - switch.turn_on: ch_2_enabled
+      - switch.turn_on: dhw_enabled
+      - number.set:
+          id: dhw_num
+          value:  54
+### BAXI END ### 
+
+
 esp8266:
   board: d1_mini
 
+### BAXI ###  
 external_components:
-  source: github://khenderick/esphome-opentherm
+  source: github://ananyevgv/esphome-opentherm-khenderick
   components: [opentherm]
+  refresh: 0s
+
 opentherm:
-  read_pin: 3
-  write_pin: 1
-# Enable logging
-logger:
-   baud_rate: 0
-   
+  read_pin: D8 #D2
+  write_pin: 3 #D1
+### BAXI END ###  
+
 api:
   password: !secret api_pass
 #Включаем загрузку по воздуху
@@ -26,6 +57,13 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  
+logger:
+   baud_rate: 0
+#external_components:
+#    source: github://pr#5477
+#    components: [ max7219 ]
+#    refresh: always
 
 i2c:
    sda: D2
@@ -46,66 +84,147 @@ remote_transmitter:
 text_sensor:
   - platform: wifi_info
     ip_address:
-      name: ${upper_devicename} IP Address
+      name: "${name} IP Address"
       icon: mdi:ip
     ssid:
-      name: ${upper_devicename} SSID
+      name: "${name} SSID"
       icon: mdi:access-point-network
     mac_address:
-      name: ${upper_devicename} Mac
+      name: "${name} Mac"
       icon: mdi:lan
 
+### BAXI ### 
   - platform: template
-    name: "Ошибка котла"
+    name: "${last_name} Ошибка котла"
     icon: mdi:water-boiler-alert
     lambda: |-
       uint8_t var = (id(oem_error).state);
       switch (var) {
-        case 0: return std::string("Ошибок нет");
-        case 1: return std::string("E01 Блокировка розжига");
-        case 2: return std::string("E02 Вмешательство защитного термостата");
-        case 3: return std::string("E03 Вмешательство датчика тяги (пневмореле) / термостата");
-        case 5: return std::string("E05 Неисправность датчика NTC подачи отопления");
+        case 0: return std::string("");
+        case 1: return std::string("E01 Отсутствие розжига");
+        case 2: return std::string("E02 Сработал защитный термостат от перегрева");
+        case 3: return std::string("E03 Сработал защитный датчик тяги");
+        case 4: return std::string("E04 Частый срыв пламени");        
+        case 5: return std::string("E05 Неисправность датчика отопления");
         case 6: return std::string("E06 Неисправность датчика контура ГВС");
-        case 10: return std::string("E10 Отсутствует разрешение от гидравлического прессостата");
+        case 10: return std::string("E10 Неисправность датчика давления воды");
         case 11: return std::string("E11 Неисправность открытия входа внешнего программируемого датчика температуры (= 04)");
         case 12: return std::string("E12 Нет разрешения от дифференциального датчика гидравлического давления (прессостата)");
         case 13: return std::string("E13 Залипание контактов дифференциального гидравлического прессостата");
         case 18: return std::string("E18 Включено заполнение системы (замечание)");
         case 19: return std::string("E19 Неисправность при заполнения системы");
-        case 25: return std::string("E25 Вмешательство защиты из-за отсутствия циркуляции воды");
+        case 25: return std::string("E25 Воздых в системе");
         case 35: return std::string("E35 Паразитное пламя (ошибка пламени)");
-        case 98: return std::string("E98 ВПроблема с контактами реле газового клапана, внутренняя ошибка");
+        case 80 ... 96: return std::string("E80-96 Ошибка сьемной панели)");
+        case 97: return std::string("E97 Неправильная частота сети электропитания)");
+        case 98: return std::string("E98 Проблема с контактами реле газового клапана, внутренняя ошибка");
         case 99: return std::string("E99 Проблема котактов реле, внутренняя ошибка");
         default: return std::string("Неизвестная ошибка");
       } 
+### BAXI END ### 
 
 sensor:
+  - platform: custom
+    lambda: |-
+      auto rad_sens = new MyRadSens();
+      App.register_component(rad_sens);
+      return {rad_sens->IntensityDynamic_Sensor,rad_sens->IntensityStatic_Sensor, rad_sens->CurrentCPM_Sensor, rad_sens->MaxCPM_Sensor,rad_sens->Sensivity_Sensor};
+    sensors:
+      - name: "Dynamic intensity"
+        id: dynamic_intensity
+        accuracy_decimals: 1
+        unit_of_measurement: μR/h
+        state_class: measurement
+        icon: mdi:radioactive
+      - name: "Static intensity"
+        accuracy_decimals: 1
+        unit_of_measurement: μR/h
+        state_class: measurement
+        icon: mdi:radioactive
+      - name: "Current CPM"
+        accuracy_decimals: 1
+        unit_of_measurement: CPM
+        state_class: measurement
+        icon: mdi:radioactive
+      - name: "Max CPM"
+        accuracy_decimals: 1
+        unit_of_measurement: CPM
+        state_class: measurement
+        icon: mdi:radioactive
+      - name: "Device Sensivity"
+        id: sensivity
+        state_class: measurement
+        entity_category: diagnostic
+
+### BAXI  ### 
+  - platform: pid
+    name: "${last_name} PID результат"
+    type: RESULT    
+  - platform: pid
+    name: "${last_name} PID нагрев"
+    type: HEAT    
+  - platform: pid
+    name: "${last_name} PID ошибка"
+    type: ERROR    
+  - platform: pid
+    name: "${last_name} PID p"
+    type: PROPORTIONAL
+  - platform: pid
+    name: "${last_name} PID i"
+    type: INTEGRAL
+  - platform: pid
+    name: "${last_name} PID d"
+    type: DERIVATIVE
+
   - platform: opentherm
     ch_min_temperature:
-      name: "CH minimum temperature"
+      name: "${last_name} CH minimum temperature"
     ch_max_temperature:
-      name: "CH maximum temperature"
+      name: "${last_name} CH maximum temperature"
     dhw_min_temperature:
-      name: "DHW minimum temperature"
+      name: "${last_name} DHW minimum temperature"
     dhw_max_temperature:
-      name: "DHW maximum temperature"
+      name: "${last_name} DHW maximum temperature"
     modulation:
-      name: "modulation"
+      name: "${last_name} modulation"
+      id: modulation
     dhw_temperature:
-      name: "DHW temperature"
+      name: "${last_name} DHW temperature"
     boiler_temperature:
-      name: "boiler temperature"
+      name: "${last_name} boiler temperature"
     outside_temperature:
-      name: "outside temperature"
-      icon: mdi:home-thermometer-outline
+      name: "${last_name} outside temperature"
     oem_error_code:
-      name: "OEM error code"
+      name: "${last_name} OEM error code"
       id: oem_error
       icon: mdi:water-boiler-alert
+      
+  - platform: copy 
+    source_id: modulation
+    name: "${last_name} power"
+    filters:
+      - lambda: return (x * 0.244);
+    unit_of_measurement: "kW"
+    device_class: "power"
+    id: boiler_power
+
+  - platform: template
+    id: kitchen_p_t
+    name: "${last_name} p_t"
+    lambda: |-
+      return id(kitchen_t).state;
+    update_interval: 5s
+    internal: true
+
+  - platform: total_daily_energy
+    name: "${last_name} Total Daily Energy"
+    power_id: boiler_power
+    accuracy_decimals: 1
+### BAXI END ###  
+
   - platform: dallas
     index: 0
-    name: ${upper_devicename} pol_t
+    name: "${name} pol_t"
     id: t_pol_k
 #    filters:
 #    - calibrate_linear:
@@ -114,29 +233,29 @@ sensor:
 
   - platform: aht10
     temperature:
-      name: "${upper_devicename} T"
+      name: "${name} T"
       id: kitchen_t
-#      filters:
-#        - calibrate_linear:
-#          - 0.0 -> 0.0
-#          - 28.0 -> 23.7
+      filters:
+        - calibrate_linear:
+          - 0.0 -> 0.0
+          - 26.1 -> 26.4
     humidity:
-      name: "${upper_devicename} humidity"
+      name: "${name} humidity"
       id: kitchen_h
-#      filters:
-#        - calibrate_linear:
-#          - 0.0 -> 0.0
-#          - 36.0 -> 42
+      filters:
+        - calibrate_linear:
+          - 0.0 -> 0.0
+          - 60.7 -> 55
     update_interval: 60s
     address: 0x38
 
   - platform: absolute_humidity
-    name: "${upper_devicename} Absolute Humidity"
+    name: "${name} Absolute Humidity"
     temperature: kitchen_t
     humidity: kitchen_h
 
   - platform: template
-    name: "${upper_devicename} brightness"
+    name: "${name} brightness"
     id: brightness
     lambda: |-
       uint8_t var = (id(i_clock).state);
@@ -157,24 +276,25 @@ sensor:
         case 13: return 13; break;
         case 14: return 14; break;
         case 15 ... 100: return 15; break;
-        default: return 15; break;
+        default: return 0; break;
       }
+    internal: true
     update_interval: 5s
     
   - platform: bh1750
-    name: "${upper_devicename} Illuminance"
+    name: "${name} Illuminance"
     id: i_clock
     address: 0x23
     update_interval: 10s
       
   - platform: wifi_signal
-    name: ${upper_devicename} Wifi
+    name: ${name} Wifi
     update_interval: 60s  
     id: wifi_signal_db
     entity_category: "diagnostic"
   - platform: copy # Reports the WiFi signal strength in %
     source_id: wifi_signal_db
-    name: ${upper_devicename} WiFi Percent
+    name: ${name} WiFi Percent
     filters:
       - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
     unit_of_measurement: "%"
@@ -183,7 +303,7 @@ sensor:
   - platform: pulse_meter
     pin: D7
     unit_of_measurement: 'l/min'
-    name: "${devicename} l/min"
+    name: "${name} l/min"
     id: potok
   #  internal_filter: 10ms
     accuracy_decimals: 1
@@ -203,120 +323,247 @@ sensor:
     name: "water_total"
     entity_id: sensor.drink_water_yearly
     id: drink_water_yearly
-
+    accuracy_decimals: 1
+    
   - platform: homeassistant
     name: "timer"
     entity_id: timer.timer
     attribute: remaining
     id: timer
 
-binary_sensor:
-  - platform: opentherm
-    ch_active:
-      name: "CH active"
-      icon: mdi:radiator
-    ch_2_active:
-      name: "ECO"
-      icon: mdi:sprout
-    dhw_active:
-      name: "DHW active"
-      icon: mdi:water-boiler
-    flame_active:
-      name: "flame active"
-      icon: mdi:fire
-    fault:
-      name: "fault"
-      icon: mdi:water-boiler-alert
-    diagnostic:
-      name: "diagnostic"
-      icon: mdi:face-agent
-    service_request:
-      name: "service request"
-      icon: mdi:account-wrench
-    lockout_reset:
-      name: "lockout reset"
-      icon: mdi:lock-reset
-    water_pressure_fault:
-      name: "water pressure fault"
-      icon: mdi:gauge-empty
-    gas_flame_fault:
-      name: "gas/flame fault"
-      icon: mdi:gas-burner
-    air_pressure_fault:
-      name: "air pressure fault"
-      icon: mdi:cloud-alert-outline
-    water_over_temperature_fault:
-      name: "water over temperature fault"
-      icon: mdi:coolant-temperature
-
-switch:
-  - platform: opentherm
-    ch_enabled:
-      name: "CH enabled"
-      icon: mdi:radiator
-    ch_2_enabled:
-      name: "ECO enabled"
-      icon: mdi:sprout
-    dhw_enabled:
-      name: "DHW enabled"
-      icon: mdi:water-boiler
-  - platform: restart
-    name: "${devicename} Restart"
+  - platform: template
+    name: "time boiler off"
+    device_class: timestamp
+    id: boiler_off
+    update_interval: never
 
   - platform: template
-    name: ${upper_devicename} Power LG
-    icon: "hue:wall-flood"
-    turn_on_action:
+    name: "time boiler on"
+    device_class: timestamp
+    id: boiler_on
+    update_interval: never
+
+  - platform: template
+    name: "boiler working"
+    lambda: |-
+      return id(counter).state;
+    accuracy_decimals: 0
+    icon: mdi:counter
+
+  - platform: duty_time
+    id: boiler_work_time
+    name: boiler Work Time
+    sensor: flame
+    restore: false
+    last_time:
+      name: boiler Turn-On Time
+      id: boiler_turn_on_time
+
+button:
+  - platform: template
+    name: "${name} Power LG"
+    icon: mdi:television-classic
+    on_press:
       - remote_transmitter.transmit_lg:
          data: 0x20DF10EF # power on/off
          nbits: 32
+
+  - platform: restart
+    name: "${name} Restart"
+### BAXI  ###  
+  - platform: opentherm
+    boiler_lo_reset:
+      name: "${last_name} Boiler lock-out reset"
+    ch_water_filling:
+      name: "${last_name} CH water filling"   
+  - platform: template
+    name: "${last_name} PID автонастройка"
+    on_press:
+      - climate.pid.autotune: pid_climate  
+### BAXI END ###      
+switch:
+### BAXI ###   
+  - platform: opentherm
+    ch_enabled:
+      name: "${last_name} CH enabled"
+      icon: mdi:radiator
+      id: ch_enabled
+    ch_2_enabled:
+      name: "${last_name} ECO enabled"
+      icon: mdi:sprout
+      id: ch_2_enabled
+    dhw_enabled:
+      name: "${last_name} DHW enabled"
+      icon: mdi:water-boiler
+      id: dhw_enabled
+    otc_active:
+      name: "${last_name} OTC active"
+### BAXI END ###   
+#(static_cast<int>(id(brightness).state));
+
+### BAXI ###  
+number:
+  - platform: opentherm
+    ch_setpoint_temperature:
+      name: "${last_name} CH setpoint temperature"
+      min_value: 10.0
+      max_value: 85.0
+      step: 0.5
+      restore_value: true
+      id: ch_num
+    dhw_setpoint_temperature:
+      name: "${last_name} DHW setpoint temperature"
+      min_value: 35.0
+      max_value: 60.0
+      step: 1
+      restore_value: true
+      id: dhw_num
+
+  - platform: template
+    name: ${name} Counter
+    id: counter
+    update_interval: 30s
+    min_value: 0
+    max_value: 100                             
+    step: 0
+    optimistic: true 
+    initial_value: 0
+    internal: true
+
+binary_sensor:
+  - platform: opentherm
+    ch_active:
+      name: "${last_name} CH active"
+      icon: mdi:radiator
+    ch_2_active:
+      name: "${last_name} ECO"
+      icon: mdi:sprout
+    dhw_active:
+      name: "${last_name} DHW active"
+      icon: mdi:water-boiler
+    flame_active:
+      name: "${last_name} flame active"
+      icon: mdi:fire
+      id: flame
+      on_press:
+        then:
+          - sensor.template.publish:                                                                                                                                           
+              id: boiler_on                                                                                                                                                   
+              state: !lambda 'return id(sntp_time).now().timestamp;'
+      on_release:
+        then:
+          - number.set:
+              id: counter
+              value: !lambda |-
+                return ((id(counter).state)+1);
+          - sensor.template.publish:                                                                                                                                                                                                                                                                              
+              id: boiler_off                                                                                                                                                 
+              state: !lambda 'return id(sntp_time).now().timestamp;'     
+    fault:
+      name: "${last_name} fault"
+      icon: mdi:water-boiler-alert
+    diagnostic:
+      name: "${last_name} diagnostic"
+      icon: mdi:face-agent
+    service_request:
+      name: "${last_name} service request"
+      icon: mdi:account-wrench
+    lockout_reset:
+      name: "${last_name} lockout reset"
+      icon: mdi:lock-reset
+    water_pressure_fault:
+      name: "${last_name} water pressure fault"
+      icon: mdi:gauge-empty
+    gas_flame_fault:
+      name: "${last_name} gas/flame fault"
+      icon: mdi:gas-burner
+    air_pressure_fault:
+      name: "${last_name} air pressure fault"
+      icon: mdi:cloud-alert-outline
+    water_over_temperature_fault:
+      name: "${last_name} water over temperature fault"
+      icon: mdi:coolant-temperature
+    dhw_present:
+      name: "${last_name} DHW present" # (= true, not present = false)
+    modulating:
+      name: "${last_name} boiler uses modulating" # (= true, on/off = false)
+    cooling_supported:
+      name: "${last_name} cooling supported" # (= true, unsupported = false)
+    dhw_storage_tank:
+      name: "${last_name} DHW storage tank" # (= true, instantaneous/unsupported = false)
+    device_lowoff_pump_control:
+      name: "${last_name} device low-off/pump control allowed" # (= true, not allowed = false)
+    ch_2_present:
+      name: "${last_name} CH 2 present" # (= true, not present = false)
+
+climate:
+  - platform: pid
+    id: pid_climate
+    name: "${last_name} PID"
+    sensor: kitchen_t
+    default_target_temperature: 24°C
+    heat_output: pid_output
+    control_parameters:
+      kp: 0.0
+      ki: 0.0
+      kd: 0.0
+    on_state:
+      lambda: !lambda |-
+        if (id(pid_climate).mode == 3) {
+          id(ch_enabled).turn_on();
+        } else {
+          id(ch_enabled).turn_off();
+        }       
+
+output:
+  - platform: template
+    id: pid_output
+    type: float
+    write_action:
+      - number.set:
+          id: ch_num
+          value:  !lambda return (state + 10);
+
+### BAXI END ###  
 
 display:
   - platform: max7219
     cs_pin: D4
     num_chips: 3
     lambda: |-
-      it.set_intensity(static_cast<int>(id(brightness).state));
+      it.set_intensity(id(brightness).state);
       static int i = 0;
       i++;
         it.strftime(14,"%S", id(sntp_time).now());
-        it.printf(16,"%.1fc" , id(kitchen_t).state);
+        it.printf(16,"%.1f~" , id(kitchen_t).state);
         it.printf(20,"%.1fh" , id(kitchen_h).state);
 
         if ((id(drink_water_yearly).state) > 10000)
           it.printf(8,"ErrorF");
         else 
-          it.printf(8,"%.1fL" , id(drink_water_yearly).state);
+          it.printf(8,"%5.1f" , id(drink_water_yearly).state);
  
         if ((i % 2) == 0) 
           it.strftime(0,"%H.%M", id(sntp_time).now());
         else 
           it.strftime(0,"%H%M", id(sntp_time).now()); 
-          
-number:
-  - platform: opentherm
-    ch_setpoint_temperature:
-      name: "CH setpoint temperature"
-      min_value: 10.0
-      max_value: 85.0
-      step: 1
-      restore_value: true
-
-    dhw_setpoint_temperature:
-      name: "DHW setpoint temperature"
-      min_value: 35.0
-      max_value: 60.0
-      step: 1
-      restore_value: true
 
 time:
   - platform: sntp
     id: sntp_time
     timezone: UTC-3
     servers: !secret sntp
+    on_time: 
+      - hours: 0
+        minutes: 0
+        seconds: 0
+        then:
+          - number.set:
+              id: counter
+              value: 0
 
 web_server:
   port: 80
   auth:
     username: !secret web_user
-    password: !secret web_pass  
+    password: !secret web_pass     
