@@ -1,65 +1,74 @@
-###################################################################
-##                      WEMOS D1 ESP32                           ##
-##  |GN|       |RS|          |#|     | 1|          |GN|          ##
-##  |NC|       |36|          |#|     | 3|          |27| i2s_lrclk##
-##  |39|       |26| clk      |#|     |22| scl      |25| i2s_dout ##
-##  |35|       |18|          |#|     |21| sda      |32| i2s_bclk ##
-##  |33|       |19| dio_1    |#|     |17|          |12| mute     ##
-##  |34|       |23| dio_2    |#|     |16|          | 4|          ##
-##  |14|       | 5|          |#|     |GN|          | 0|          ## 
-##  |NC|       |3V|          |#|     |5V|          | 2|          ##
-##  | 9|       |13|          |#|     |15|          | 8|          ##
-##  |11|       |10|          |#|     | 7|          | 6|          ##
-###################################################################
+##########################################
+##           WEMOS D1 mini              ##
+##  |RS|          |#|     | 1| txuart   ##
+##  |A0|          |#|     | 3| rxuart   ##
+##  |D0| CLK      |#|     |D1| scl      ##
+##  |D5| IR       |#|     |D2| sda      ##
+##  |D6| DIO_1    |#|     |D3| dallas   ##
+##  |D7| DIO_2    |#|     |D4| DIO_3    ##
+##  |D8|          |#|     |GN|          ## 
+##  |3V|          |#|     |5V|          ##
+##########################################
 
+#https://github.com/johnboiles/esphome-hdmi-cec
 substitutions:
-  name: bedroom
-  device_description: "Часы спальня"
+  name: holl
+  device_description: "Часы холл"
 
 esphome:
   name: "${name}"
   comment: "${device_description}"
-#esp8266:
-#  board: d1_mini
-esp32:
-  board: wemos_d1_mini32
-external_components:
-  - source: github://ayufan/esphome-components
+  platform: esp8266
+  board: d1_mini
 
 # Enable logging
 logger:
+   baud_rate: 0
 
-# Enable Home Assistant API 
+# Enable Home Assistant API бля
 api:
   password: !secret api_pass
 #Включаем загрузку по воздуху
 ota:
   password: !secret ota_pass
 
-
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
-memory:
-  
+#captive_portal:
+#external_components:
+#  - source: github://johnboiles/esphome-hdmi-cec
+#  - source:
+#      type: local
+#      path: my_components
 sun:
   latitude: !secret latitude
   longitude: !secret longitude
+  
+uart:
+  tx_pin: 1
+  rx_pin: 3
+  baud_rate: 9600
+  id: pzem
+
+modbus:
 
 i2c:
-   sda: D2 #21
-   scl: D1 #22
+   sda: D2
+   scl: D1
    scan: true
-   id: bus_a   
+
 bme680_bsec:  
   address: 0x77
 
-i2s_audio:
-  i2s_lrclk_pin: 27
-  i2s_bclk_pin: 32
-  id: clok
-  
+dallas:
+  - pin: D3
+
+remote_transmitter:
+  pin: D5
+  carrier_duty_percent: 50%
+
 text_sensor:
   - platform: wifi_info
     ip_address:
@@ -94,13 +103,10 @@ text_sensor:
       }
 
 sensor:
-  - platform: internal_temperature
-    name: "${name} ESP32 T"
-    
   - platform: bme680_bsec
     temperature:
       name: "${name} T"
-      id: bedroom_t
+      id: bme680_t
       filters:
       - calibrate_linear:
         - 0.0 -> 0.0
@@ -109,7 +115,7 @@ sensor:
       name: "${name} P"
     humidity:
       name: "${name} H"
-      id: bedroom_h
+      id: bme680_h
       filters:
       - calibrate_linear:
         - 0.0 -> 0.0
@@ -121,6 +127,7 @@ sensor:
      name: "${name}  IAQ Accuracy"
     co2_equivalent:
       name: "${name} CO₂"
+
     breath_voc_equivalent:
       name: "${name} VOC"
     gas_resistance:
@@ -131,35 +138,18 @@ sensor:
 
   - platform: absolute_humidity
     name: "${name} Absolute Humidity"
-    temperature: bedroom_t
-    humidity: bedroom_h
-
-  - platform: template
-    name: "${name} brightness"
-    id: brightness
-    lambda: |-
-      uint8_t var = (id(i_clock).state);
-      switch (var) {
-        case 0 : return 0; break;
-        case 1 ... 3: return 1; break;
-        case 4 ... 7: return 2; break;
-        case 8 ... 11: return 3; break;
-        case 12 ... 15: return 4; break;
-        case 16 ... 19: return 5; break;
-        case 20 ... 23: return 6; break;
-        case 24 ... 100: return 7; break;
-        default: return 0; break;
-      }
-    internal: true
-    update_interval: 5s
-    
-  - platform: bh1750
-    name: "${name} Illuminance"
-    id: i_clock
-    address: 0x23
-    update_interval: 10s
-    i2c_id: bus_a
-     
+    temperature: bme680_t
+    humidity: bme680_h
+ 
+  - platform: dallas
+    index: 0
+    name: "${name} pol_t"
+    id: t_pol_h
+    filters:
+    - calibrate_linear:
+      - 0.0 -> 0.0
+      - 25.0 -> 24.0
+      
   - platform: wifi_signal
     name: "${name} Wifi"
     update_interval: 60s  
@@ -173,68 +163,128 @@ sensor:
     unit_of_measurement: "%"
     entity_category: "diagnostic"
     
+  - platform: pzemac
+    current:
+      name: "PZEM-004T V3 Current"
+    voltage:
+      name: "PZEM-004T V3 Voltage"
+    energy:
+      name: "PZEM-004T V3 Energy"
+      filters:
+        - lambda: return x * 0.001 + 41339;
+      unit_of_measurement: "kWh"
+    power:
+      name: "PZEM-004T V3 Power"
+    frequency:
+      name: "PZEM-004T V3 Frequency"
+    power_factor:
+      name: "PZEM-004T V3 Power Factor"
+    update_interval: 60s
+    id: PZEM
+
+  - platform: template
+    name: "${name} brightness"
+    id: brightness
+    lambda: |-
+      uint8_t var = (id(i_clock).state);
+      switch (var) {
+        case 0 : return 0; break;
+        case 1 ... 2: return 1; break;
+        case 3 ... 6: return 2; break;
+        case 7 ... 9: return 3; break;
+        case 10 ... 14: return 4; break;
+        case 15 ... 19: return 5; break;
+        case 20 ... 29: return 6; break;
+        case 30 ... 100: return 7; break;
+        default: return 0; break;
+      }
+    internal: true
+    update_interval: 5s
+    
+  - platform: bh1750
+    name: "${name} Illuminance"
+    id: i_clock
+    address: 0x23
+    update_interval: 10s
+
+  - platform: adc
+    pin: VCC
+    name: "${name} VCC"
+
   - platform: sun
     name: "${name} Elevation"
     type: elevation
     id: elevation
     internal: true
-    
-  - platform: esp32_hall
-    name: "${name} hall Sensor"
-    update_interval: 60s
 
 button:
   - platform: restart
-    name: "${name} restart"
-    
+    name: "${name} Restart"
+
+  - platform: template
+    name: "${name} Power LG"
+    icon: mdi:television-classic
+    on_press:
+      - remote_transmitter.transmit_lg:
+         data: 0x20DF10EF # power on/off
+         nbits: 32
+  - platform: template
+    name: "${name} Reset Power"
+    icon: mdi:file-rotate-left-outline
+    on_press:
+      - pzemac.reset_energy: PZEM
+
+
 display:
   - platform: tm1637
     id: tm1637_c
     clk_pin: 
       number: D0 #26
       allow_other_uses: true
-    dio_pin: D6 #19
-    update_interval: 500ms
+    dio_pin: D6
+    update_interval: 1s
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
       static int i = 0;
       i++;
       if ((i % 2) == 0)
-        it.strftime("%H.%M", id(sntp_time).now());
+        it.strftime("%H.%M", id(homeassistant_time).now());
       else
-        it.strftime("%H%M", id(sntp_time).now()); 
-      it.printf(4,"%.0f." , id(bedroom_h).state);
-      
+        it.strftime("%H%M", id(homeassistant_time).now());  
   - platform: tm1637
     id: tm1637_t
     clk_pin: 
       number: D0 #26
       allow_other_uses: true
-    dio_pin: D7 #23
-    update_interval: 500ms
+    dio_pin: D7
+    update_interval: 1s
     lambda: |-
       it.set_intensity(static_cast<int>(id(brightness).state));
-      it.printf( "%0.0f.c" , id(bedroom_t).state);
+      it.printf( "%0.0f.c" , id(bme680_t).state);
       if ((id(elevation).state) > 0)
         it.printf(3,"~");
 #      else
-#        it.printf(3,"_");       
-media_player:
-  - platform: i2s_audio
-    name: "${name}"
-    dac_type: external
-   # disabled_by_default: False
-    i2s_dout_pin: 25
-    mode: mono
-    i2s_audio_id: clok
-    i2s_comm_fmt: MSB
-
-   # mute_pin:
-     # number: 12 # GAIN Connected to VDD 100kΩ resistor 3db(6db VDD) Connected to GND 100kΩ resistor 15db (12db GND)
-      #inverted: true
+#        it.printf(3,"_"); 
+  - platform: tm1637
+    id: tm1637_h
+    clk_pin: 
+      number: D0 #26
+      allow_other_uses: true
+    dio_pin: D4
+    update_interval: 1s
+    lambda: |-
+      it.set_intensity(static_cast<int>(id(brightness).state));
+      it.printf( "%.0f ." , id(bme680_h).state);     
+    
+ #switch:
+#  - platform: uart
+#    uart_id: pzem
+#    name: "pzem reset"
+#    data: [0x01, 0x42, 0x80, 0x11]
 
 time:
+  
   - platform: sntp
-    id: sntp_time
-    timezone: Europe/Moscow
+    id: homeassistant_time
+    timezone: UTC-3 #Europe/Moscow
     servers: !secret sntp
