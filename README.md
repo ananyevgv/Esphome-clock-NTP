@@ -43,6 +43,15 @@ Wemos D1 mini pin D8  для подключения TM1637 и MAX7219 не ис�
 
 На home assistant установлен адон Chrony https://github.com/hassio-addons/addon-chrony 
 
+
+Будильник 
+==========
+используется сторонний компонент dynamic_on_time https://github.com/hostcc/esphome-component-dynamic-on-time
+DF-Player, BME-680.
+
+smart-time.yaml
+
+
 Сылки на компоненты
 ========================
 https://github.com/cyberjunky/jukebox-card
