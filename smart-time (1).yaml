@@ -1,0 +1,296 @@
+esphome:
+  name: smart-time
+  friendly_name: Умные часы
+# Тип контроллера  и тип платы
+esp8266:
+  board: d1_mini
+# Отключаем вывод лога на физический порт uart
+logger:
+  baud_rate: 0
+# Включаем обновление прошивки по сети
+ota:
+  password: "02c4d1987f2c6f6c85ec92a060569dd1"
+# Прописываем сеть wifi
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+# При невозможности подключить сеть wifi создаем точку доступа
+  ap:
+    ssid: "Smart-Time Fallback Hotspot"
+    password: "12345678"
+# выводим страницу настройки контроллера 
+captive_portal:
+# Указываем путь для стороннего компонента dynamic_on_time https://github.com/hostcc/esphome-component-dynamic-on-time
+external_components:
+  source: github://hostcc/esphome-component-dynamic-on-time
+  components: [ dynamic_on_time ]
+
+# Создаем интерфейс для подключения датчиков (i2c)
+i2c:
+  sda: D2
+  scl: D1
+# Создаем интерфейс для управления dfplayer (uart)
+uart:
+  tx_pin: 3
+  rx_pin: 1
+  baud_rate: 9600
+  id: df
+# Указываем использование библиотеки bsec для датчика bme680 и указываем  его адрес
+bme680_bsec:
+  address: 0x77
+# Прописываем сенсоры датчика bme680 
+sensor:
+  - platform: bme680_bsec
+    temperature:
+      name: "BME680 Temperature"
+      id: temp
+    pressure:
+      name: "BME680 Pressure"
+      id: pres
+      filters:
+        - multiply: 0.75
+      unit_of_measurement: mmHg
+    humidity:
+      name: "BME680 Humidity"
+      id: vlaga
+    iaq:
+      name: "BME680 IAQ"
+      id: iaq
+    co2_equivalent:
+      name: "BME680 CO2 Equivalent"
+      id: co2
+    breath_voc_equivalent:
+      name: "BME680 Breath VOC Equivalent"
+# Прописываем кнопку отключения проигрывания мелодии   
+binary_sensor:
+  - platform: tm1637
+    name: alarm off
+    tm1637_id: tm1637_co2
+    key: 0
+    on_press:
+    - dfplayer.stop
+# Прописываем dfplayer
+dfplayer:
+  uart_id: df
+  on_finished_playback:
+    then:
+      logger.log: 'Somebody press play!'
+# Создаем выключатели  дней недели для будильника и выключатель сигнала будильника
+switch:
+  - platform: template
+    id: mon
+    name: "Alarm Mon"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+  - platform: template
+    id: tue
+    name: "Alarm Tue"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+  - platform: template
+    id: wed
+    name: "Alarm Wed"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+  - platform: template
+    id: thu
+    name: "Alarm Thu"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+  - platform: template
+    id: fri
+    name: "Alarm Fri"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+  - platform: template
+    id: sat
+    name: "Alarm Sat"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+  - platform: template
+    id: sun
+    name: "Alarm Sun"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+  - platform: template
+    id: disabled
+    name: "Alarm Disable"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+# Создаем числовой ввод часов, минут,  уровень громкости, выбор мелодии.
+number:
+  - platform: template
+    id: hour
+    name: "Alarm Hour"
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_value: 0
+    min_value: 0
+    max_value: 23
+    step: 1
+    mode: box
+
+  - platform: template
+    name: "Alarm Minute"
+    id: minute
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_value: 0
+    min_value: 0
+    max_value: 59
+    step: 1
+    mode: box
+
+  - platform: template
+    name: "Alarm melody"
+    id: melody
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_value: 1
+    min_value: 1
+    max_value: 9
+    step: 1
+    mode: box
+
+  - platform: template
+    name: "Alarm volume"
+    id: volume
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_value: 20
+    min_value: 1
+    max_value: 30
+    step: 1
+    mode: box
+    on_value: 
+      - dfplayer.set_volume: 
+          !lambda |-
+            return id(volume).state;
+# Создаем быдильник на стороннем компоненте dynamic_on_time
+dynamic_on_time:
+  - id: alarm_clock
+    rtc: sntp_time
+    hour: hour
+    minute: minute
+    mon: mon
+    tue: tue
+    wed: wed
+    thu: thu
+    fri: fri
+    sat: sat
+    sun: sun
+    disabled: disabled
+    on_time:
+      - logger.log:
+          format: 'Alarm clock'
+          level: 'INFO'
+      - dfplayer.play_mp3:
+          file: 
+            !lambda |-
+              return id(melody).state;
+# Создаем кнопки включения выключения мелодии для WEB интерфейса
+button:
+  - platform: template
+    name: "play"
+    on_press:
+      - dfplayer.play_mp3:
+          file: 
+            !lambda |-
+              return id(melody).state;
+  - platform: template
+    name: "stop"
+    on_press:
+    - dfplayer.stop
+# Прописваем дисплеи и распределяем на них показания
+display:
+  - platform: tm1637
+    id: tm1637_time
+    clk_pin: 
+      number: D5
+      allow_other_uses: true
+    dio_pin: D4
+    update_interval: 1s
+    length: 6
+    lambda: |-
+      static int i = 0;
+      i++;
+      if ((i % 2) == 0)
+        it.strftime("%H.%M", id(sntp_time).now());
+      else 
+        it.strftime("%H%M", id(sntp_time).now());
+      if ((i % 8) == 0)
+        it.print(5, "C.");
+      else
+        it.printf(4, "%.0f", id(temp).state);
+
+  - platform: tm1637
+    id: tm1637_date
+    clk_pin:
+      number: D5
+      allow_other_uses: true
+    dio_pin: D6
+    length: 6
+    update_interval: 2s
+    lambda: |-
+      it.strftime("%d.%m", id(sntp_time).now());
+      static int h = 0;
+      h++;
+      if ((h % 4) == 0)
+        it.print(5, "H");
+      else      
+        it.printf(4, "%.0f", id(vlaga).state);
+
+  - platform: tm1637
+    id: tm1637_pres
+    clk_pin:
+      number: D5
+      allow_other_uses: true
+    dio_pin: D7
+    update_interval: 2s
+    lambda: |-
+      static int p = 0;
+      p++;
+      if ((p % 4) == 0) 
+        it.print(0, "PAe5");
+      else
+        it.printf(0, "%.0f", id(pres).state);
+
+  - platform: tm1637
+    id: tm1637_co2
+    clk_pin:
+      number: D5
+      allow_other_uses: true
+    dio_pin: D0
+    update_interval: 2s
+    lambda: |-
+      static int q = 0;
+      q++;
+      if ((q % 4) == 0)    
+        it.print(0, "CO2");  
+      else
+        it.printf(0, "%.0f", id(co2).state);    
+# Создаем клиента sntp для получения точного времени
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Moscow
+    servers:
+     - 0.pool.ntp.org
+     - 1.pool.ntp.org
+     - 2.pool.ntp.org     
+# Создаем WEB интерфейс
+web_server:
+  port: 80
+  version: 3  
