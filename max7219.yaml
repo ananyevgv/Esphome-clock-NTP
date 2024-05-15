@@ -59,23 +59,23 @@ display:
     
       // Разбираем Часы
       uint8_t HH = (id(sntp_time).now().hour);
-      uint8_t H = HH / 10;
+      uint8_t HD = HH / 10;
       uint8_t h = HH % 10;
-      static uint8_t Hk;
+      static uint8_t HDk;
       static uint8_t hk;
 
       // Разбираем минуты
       uint8_t MM = (id(sntp_time).now().minute);
-      uint8_t M = MM / 10;
+      uint8_t MD = MM / 10;
       uint8_t m = MM % 10;
-      static uint8_t Mk;
+      static uint8_t MDk;
       static uint8_t mk;
 
       // Разбираем секунды
       //uint8_t SS = (id(sntp_time).now().second);
-      //uint8_t S = SS / 10;
+      //uint8_t SD = SS / 10;
       //uint8_t s = SS % 10;
-      //static uint8_t Sk = 0;
+      //static uint8_t SDk = 0;
       //static uint8_t sk = 0;
 
       // Выводим часы
@@ -92,17 +92,17 @@ display:
         it.printf(9, 4, id(digit_font), TextAlign::CENTER,"%u", h );
 
       // Выводим десятки часов
-      if (((HH % 10) == 0) & (H != Hk))   {
-        static int Hi = 0;
-        it.printf(3, Hi-4, id(digit_font), TextAlign::CENTER, "%u", H );
-        it.printf(3, Hi+4, id(digit_font), TextAlign::CENTER,"%u", Hk );
-        Hi++;
-        if (Hi == 8)
-          Hi = 0;
-          Hk = H;
+      if ( HD != HDk )   {
+        static int HDi = 0;
+        it.printf(3, HDi-4, id(digit_font), TextAlign::CENTER, "%u", HD );
+        it.printf(3, HDi+4, id(digit_font), TextAlign::CENTER,"%u", HDk );
+        HDi++;
+        if (HDi == 8)
+          HDi = 0;
+          HDk = HD;
       }  
       else
-        it.printf(3, 4, id(digit_font), TextAlign::CENTER,"%u", H );
+        it.printf(3, 4, id(digit_font), TextAlign::CENTER,"%u", HD );
 
 
       // Выводим минуты
@@ -119,17 +119,17 @@ display:
         it.printf(22, 4, id(digit_font), TextAlign::CENTER,"%u", m );
 
       // Выводим десятки минут
-      if (((MM % 10) == 0) & (M != Mk))   {
-        static int Mi = 0;
-        it.printf(16, Mi-4, id(digit_font), TextAlign::CENTER,"%u", M );
-        it.printf(16, Mi+4, id(digit_font), TextAlign::CENTER,"%u", Mk );
-        Mi++;
-        if (Mi == 8)
-          Mi = 0;
-          Mk = M;
+      if (MD != MDk)   {
+        static int MDi = 0;
+        it.printf(16, MDi-4, id(digit_font), TextAlign::CENTER,"%u", MD );
+        it.printf(16, MDi+4, id(digit_font), TextAlign::CENTER,"%u", MDk );
+        MDi++;
+        if (MDi == 8)
+          MDi = 0;
+          MDk = MD;
       }  
       else
-        it.printf(16, 4, id(digit_font), TextAlign::CENTER,"%u", M );
+        it.printf(16, 4, id(digit_font), TextAlign::CENTER,"%u", MD );
 
 time:
   - platform: sntp
