@@ -84,9 +84,10 @@ display:
         it.printf(9,hi-4, id(digit_font), TextAlign::CENTER,"%u", h );
         it.printf(9, hi+4, id(digit_font), TextAlign::CENTER,"%u", hk );
         hi++;
-        if (hi == 8)
+        if (hi == 8) {
           hi = 0;
           hk = h;
+        }
       }  
       else
         it.printf(9, 4, id(digit_font), TextAlign::CENTER,"%u", h );
@@ -97,9 +98,10 @@ display:
         it.printf(3, HDi-4, id(digit_font), TextAlign::CENTER, "%u", HD );
         it.printf(3, HDi+4, id(digit_font), TextAlign::CENTER,"%u", HDk );
         HDi++;
-        if (HDi == 8)
+        if (HDi == 8) {
           HDi = 0;
           HDk = HD;
+        }
       }  
       else
         it.printf(3, 4, id(digit_font), TextAlign::CENTER,"%u", HD );
@@ -111,9 +113,10 @@ display:
         it.printf(22,mi-4, id(digit_font), TextAlign::CENTER,"%u", m );
         it.printf(22, mi+4, id(digit_font), TextAlign::CENTER,"%u", mk );
         mi++;
-        if (mi == 8)
+        if (mi == 8) {
           mi = 0;
           mk = m;
+        }
       }  
       else
         it.printf(22, 4, id(digit_font), TextAlign::CENTER,"%u", m );
@@ -124,12 +127,14 @@ display:
         it.printf(16, MDi-4, id(digit_font), TextAlign::CENTER,"%u", MD );
         it.printf(16, MDi+4, id(digit_font), TextAlign::CENTER,"%u", MDk );
         MDi++;
-        if (MDi == 8)
+        if (MDi == 8) {
           MDi = 0;
           MDk = MD;
+        }
       }  
       else
         it.printf(16, 4, id(digit_font), TextAlign::CENTER,"%u", MD );
+        
 
 time:
   - platform: sntp
