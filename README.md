@@ -49,7 +49,7 @@ Wemos D1 mini pin D8  для подключения TM1637 и MAX7219 не ис�
 используется сторонний компонент dynamic_on_time https://github.com/hostcc/esphome-component-dynamic-on-time
 DF-Player, BME-680.
 
-https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/smart-time.yaml
+[https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/smart-time.yaml](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/smart-time.yaml)
 
 
 
