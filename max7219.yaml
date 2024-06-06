@@ -22,27 +22,6 @@ wifi:
 
 
 sensor:
-  - platform: pulse_counter
-    pin: 12
-    device_class: wind_speed
-    state_class: measurement
-    unit_of_measurement: 'm/s'
-    accuracy_decimals: 0
-    name: 'wind speed'
-    filters:
-      - multiply: 1  # (1 pulses m/s)
-  - platform: resistance
-    sensor: source_sensor
-    configuration: DOWNSTREAM
-    resistor: 5.6kOhm
-    name: Resistance Sensor
-
-# Example source sensor:
-  - platform: adc
-    id: source_sensor
-    pin: A0
-
-
   - platform: wifi_signal
     name: ${upper_devicename} Wifi
     update_interval: 60s  
