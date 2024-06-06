@@ -7,6 +7,7 @@ esphome:
   platform: esp8266
   board: d1_mini
 
+
 logger:
 
 api:
@@ -19,11 +20,29 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
-font:
-  - file: "font/pixelmix.ttf"
-    id: digit_font
-    size: 8
+
 sensor:
+  - platform: pulse_counter
+    pin: 12
+    device_class: wind_speed
+    state_class: measurement
+    unit_of_measurement: 'm/s'
+    accuracy_decimals: 0
+    name: 'wind speed'
+    filters:
+      - multiply: 1  # (1 pulses m/s)
+  - platform: resistance
+    sensor: source_sensor
+    configuration: DOWNSTREAM
+    resistor: 5.6kOhm
+    name: Resistance Sensor
+
+# Example source sensor:
+  - platform: adc
+    id: source_sensor
+    pin: A0
+
+
   - platform: wifi_signal
     name: ${upper_devicename} Wifi
     update_interval: 60s  
@@ -36,23 +55,29 @@ sensor:
       - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
     unit_of_measurement: "%"
     entity_category: "diagnostic"
+
 spi:
   clk_pin: D2
   mosi_pin: D4
-
+font:
+  - file: "font/pixelmix.ttf"
+    id: digit_font
+    size: 8
 display:
   - platform: max7219digit
     cs_pin: D3
-    num_chips: 3
-    update_interval: 0.250 s
+    num_chips: 4
+    update_interval: 0.25 s
 
     lambda: |-
       //точки
       static int i = 0;
       i++;
-      if ( i <= 4)  
-        it.print(12, 0, id(digit_font), ":");
-      else
+      if ( i <= 4)  {
+        it.print(15, 0, id(digit_font), ":");
+        it.print(16, 0, id(digit_font), ":");
+      }
+      else 
         if ( i == 8)
           i = 0;
 
@@ -81,8 +106,8 @@ display:
       // Выводим часы
       if (h != hk)   {
         static int hi = 0;
-        it.printf(9,hi-4, id(digit_font), TextAlign::CENTER,"%u", h );
-        it.printf(9, hi+4, id(digit_font), TextAlign::CENTER,"%u", hk );
+        it.printf(12,hi-4, id(digit_font), TextAlign::CENTER,"%u", h );
+        it.printf(12, hi+4, id(digit_font), TextAlign::CENTER,"%u", hk );
         hi++;
         if (hi == 8) {
           hi = 0;
@@ -90,13 +115,13 @@ display:
         }
       }  
       else
-        it.printf(9, 4, id(digit_font), TextAlign::CENTER,"%u", h );
+        it.printf(12, 4, id(digit_font), TextAlign::CENTER,"%u", h );
 
       // Выводим десятки часов
       if ( HD != HDk )   {
         static int HDi = 0;
-        it.printf(3, HDi-4, id(digit_font), TextAlign::CENTER, "%u", HD );
-        it.printf(3, HDi+4, id(digit_font), TextAlign::CENTER,"%u", HDk );
+        it.printf(5, HDi-4, id(digit_font), TextAlign::CENTER, "%u", HD );
+        it.printf(5, HDi+4, id(digit_font), TextAlign::CENTER,"%u", HDk );
         HDi++;
         if (HDi == 8) {
           HDi = 0;
@@ -104,14 +129,14 @@ display:
         }
       }  
       else
-        it.printf(3, 4, id(digit_font), TextAlign::CENTER,"%u", HD );
+        it.printf(5, 4, id(digit_font), TextAlign::CENTER,"%u", HD );
 
 
       // Выводим минуты
       if (m != mk)   {
         static int mi = 0;
-        it.printf(22,mi-4, id(digit_font), TextAlign::CENTER,"%u", m );
-        it.printf(22, mi+4, id(digit_font), TextAlign::CENTER,"%u", mk );
+        it.printf(28,mi-4, id(digit_font), TextAlign::CENTER,"%u", m );
+        it.printf(28, mi+4, id(digit_font), TextAlign::CENTER,"%u", mk );
         mi++;
         if (mi == 8) {
           mi = 0;
@@ -119,13 +144,13 @@ display:
         }
       }  
       else
-        it.printf(22, 4, id(digit_font), TextAlign::CENTER,"%u", m );
+        it.printf(28, 4, id(digit_font), TextAlign::CENTER,"%u", m );
 
       // Выводим десятки минут
       if (MD != MDk)   {
         static int MDi = 0;
-        it.printf(16, MDi-4, id(digit_font), TextAlign::CENTER,"%u", MD );
-        it.printf(16, MDi+4, id(digit_font), TextAlign::CENTER,"%u", MDk );
+        it.printf(21, MDi-4, id(digit_font), TextAlign::CENTER,"%u", MD );
+        it.printf(21, MDi+4, id(digit_font), TextAlign::CENTER,"%u", MDk );
         MDi++;
         if (MDi == 8) {
           MDi = 0;
@@ -133,8 +158,7 @@ display:
         }
       }  
       else
-        it.printf(16, 4, id(digit_font), TextAlign::CENTER,"%u", MD );
-        
+        it.printf(21, 4, id(digit_font), TextAlign::CENTER,"%u", MD );
 
 time:
   - platform: sntp
