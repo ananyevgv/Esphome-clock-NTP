@@ -28,8 +28,9 @@
 
 <img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-2/1639051819490.jpg" height="300" alt="Часы">
 
-Версия 3
+[Версия 3][(https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/clok-3%20new.yaml)
 ==========
+
 Часы с синхронизацией времени и автоматической регулировкой яркости + датчики температуры, влажности, температуры пола, датчик расхода фильтрованной воды  и температуры, ИК пульт (для включения ТВ). 
 
 <img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/33.jpg" height="300" alt="Часы">
