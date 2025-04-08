@@ -1,6 +1,15 @@
 
 
-Часы с синхронизацией времени и автоматической регулировкой яркости
+# Часы с синхронизацией времени и автоматической регулировкой яркости
+
+[![License][license-shield]][license]
+[![ESPHome release][esphome-release-shield]][esphome-release]
+
+[license-shield]: https://img.shields.io/static/v1?label=License&message=MIT&color=orange&logo=license
+[license]: https://opensource.org/licenses/MIT
+[esphome-release-shield]: https://img.shields.io/static/v1?label=ESPHome&message=2025.3&color=green&logo=esphome
+[esphome-release]: https://GitHub.com/esphome/esphome/releases/
+
 ========================
 | clock-1                                                    | clock-2                                                   | clock-3                                    |
 |------------------------------------------------------------|-----------------------------------------------------------|--------------------------------------------|
