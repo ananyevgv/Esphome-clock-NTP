@@ -10,7 +10,7 @@
 [esphome-release-shield]: https://img.shields.io/static/v1?label=ESPHome&message=2025.3&color=green&logo=esphome
 [esphome-release]: https://GitHub.com/esphome/esphome/releases/
 
-========================
+
 | clock-1                                                    | clock-2                                                   | clock-3                                    |
 |------------------------------------------------------------|-----------------------------------------------------------|--------------------------------------------|
 | ![clock-1](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-1/1639051819484.jpg) | ![clock-2](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-2/1639051819490.jpg) | ![clock-3](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/33.jpg) |
