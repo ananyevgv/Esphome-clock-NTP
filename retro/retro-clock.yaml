@@ -1,0 +1,866 @@
+# https://github.com/brettdottech/info-orbs
+# https://github.com/esphome/feature-requests/issues/2917
+# https://github.com/arendst/Tasmota/discussions/13161
+
+###########################################################
+##                    WEMOS S2 mini                      ##
+##  |EN|       | 1|       |#|     |40|     |39| cs4      ##
+##  | 3| cs0   | 2|       |#|     |38|     |37|          ##
+##  | 5| cs1   | 4|       |#|     |36|     |35| scl      ##
+##  | 7| clk   | 6|       |#|     |34|     |33| sda      ##
+##  | 9| led   | 8|       |#|     |21|     |18| reset    ##
+##  |11| cs2   |10|       |#|     |17|     |16| dc       ##
+##  |12| cs3   |13|       |#|     |GN|     |GN|          ## 
+##  |3V|       |14|       |#|     |15| led |5V|          ##
+############################################################
+#esp32:
+#  board: lolin_s2_mini
+#  framework:
+#    type: esp-idf
+#    sdkconfig_options:
+#      CONFIG_ESP_CONSOLE_USB_CDC: y
+############################################################
+##                    WEMOS S3 mini                       ##
+##  |EN|       | 1|        |#|     |33|     |43| cs4      ##
+##  | 2| cs0   | 3|        |#|     |37|     |44|          ##
+##  | 4| cs1   | 5|        |#|     |38|     |36| scl      ##
+##  |12| clk   | 6|        |#|     |34|1    |35| sca      ##
+##  |13| led   | 7|        |#|     |21|     |18| reset    ##
+##  |11| cs2   | 8|2       |#|     |17|     |16| dc       ##
+##  |10| cs3   | 9|3       |#|     |GN|     |GN|          ## 
+##  |3V|       |14|        |#|     |15| led |5V|          ##
+############################################################
+
+substitutions:
+  name: "clock"
+  device_description: retro-clock
+
+esphome:
+  name: "${name}"
+  platformio_options:
+    board_build.f_flash: 80000000L
+    build_flags: "-DBOARD_HAS_PSRAM"
+    board_build.arduino.memory_type: qio_opi
+    board_build.psram_type: opi
+  on_boot:
+    - priority: 500
+      then:
+        - light.turn_on:
+            id: color_clock
+            brightness: 100%
+            red: 22%
+            green: 93%
+            blue: 7%
+esp32:
+  board: esp32-s3-devkitc-1
+  cpu_frequency: 240MHZ
+  framework:
+    type: esp-idf
+
+logger:
+ 
+#-------------------------------------------
+# Packages
+#------------------------------------------- 
+packages:
+  wifi: !include packages/wifi.yaml
+  device_base: !include packages/device_base.yaml
+  # time: !include included/time.yaml
+  web: !include included/web.yaml  
+
+#-------------------------------------------
+# PSRAM
+#-------------------------------------------
+psram:
+  #mode: octal
+  speed: 80MHz
+
+#-------------------------------------------
+# SPI
+#-------------------------------------------
+spi:
+  clk_pin: 12 #36 #35  #st7789v SCL
+  mosi_pin: 9 #35 #33 #st7789v SDA
+ # interface: spi2
+
+#-------------------------------------------
+# FONT
+#-------------------------------------------  
+font:
+  - file: "font/DSEG7Classic-Bold.ttf"
+    id: SEG7
+    glyphs: |-
+      :.-0123456789
+    size: 230
+  - file: "font/DSEG14Classic-Bold.ttf"
+    id: SEG14
+    glyphs: |-
+      :.-0123456789~
+    size: 230
+
+  - file: "font/nix-Ultra3.ttf"
+    id: Ultra3
+    glyphs: |-
+      .-0123456789
+    size: 230
+    extras:
+      - file: "font/nix-Ultra.ttf"
+        glyphs: |-
+          /
+      - file: "font/DSEG7Classic-Bold.ttf"
+        glyphs: |-
+           :
+
+  - file: "font/nix-Ultra.ttf"
+    id: SET
+    size: 320
+    bpp: 8
+    glyphs: |-
+      =
+    extras:
+      - file: "font/DSEG7Classic-Bold.ttf"
+        glyphs: |-
+          1 2
+#-------------------------------------------
+# COLOR
+#-------------------------------------------
+color:
+  - id: color_red
+    hex: ff0000
+  - id: color_blue
+    hex: 2fc0ff
+  - id: color_dark_gray
+    hex: 333333
+  - id: color_gray
+    hex: 666666
+  - id: color_green
+    hex: 00ff00
+  - id: color_yellow
+    hex: e7c12c
+  - id: black
+    hex: e7c12c   
+
+#-------------------------------------------
+# OUTPUT
+#-------------------------------------------
+output:
+  - platform: ledc
+    pin: 13
+    id: backlight_pwm
+
+#-------------------------------------------
+# LIGHT
+#-------------------------------------------
+light:
+  - platform: monochromatic
+    entity_category: config
+    output: backlight_pwm
+    icon: mdi:television-ambient-light
+    name: "Display Backlight"
+    id: backlight
+    restore_mode: ALWAYS_ON
+
+  - platform: esp32_rmt_led_strip
+    entity_category: config
+    icon: mdi:palette
+    pin: 15
+    num_leds: 1
+    name: Color clock
+    id: color_clock
+    rgb_order: GRB
+    chipset: WS2812
+    #Ярко-зеленый
+   # rmt_channel: 0
+    on_state:
+      - lambda: |-
+          id(color_font) = Color(id(color_clock).remote_values.get_red()*255,id(color_clock).remote_values.get_green()*255 ,id(color_clock).remote_values.get_blue()*255 );
+
+#-------------------------------------------
+# GLOBALS
+#-------------------------------------------            
+globals:
+  - id: color_font
+    type: Color 
+    restore_value: no
+    initial_value: 'Color(55, 237, 18)'
+  - id: color_f
+    type: Color
+    restore_value: no
+    initial_value: 'Color(0, 0, 0)'
+#-------------------------------------------
+# SELECT
+#-------------------------------------------
+select:
+  - platform: template
+    name: Font select
+    icon: mdi:format-font
+    entity_category: config
+    options:
+     - DSEG7
+     - DSEG14
+     - nix-Ultra5
+    initial_option: DSEG7
+    optimistic: true
+ #   restore_value: True
+    on_value:
+      if: 
+        condition:
+          lambda: return (i == 0);
+        then:
+          - lvgl.label.update:
+              id: widget_hour_d
+              text_font: SEG7
+          - lvgl.label.update:
+              id: widget_hour
+              text_font: SEG7
+          - lvgl.label.update:
+              id: widget_minute_d
+              text_font: SEG7
+          - lvgl.label.update:
+              id: widget_minute
+              text_font: SEG7
+          - lvgl.label.update:
+              id: widget_sec
+              text_font: SEG7
+
+          - lvgl.label.update:
+              id: widget_fon_hour_d
+              text_font: SEG7
+              text: "8"
+          - lvgl.label.update:
+              id: widget_fon_hour
+              text_font: SEG7
+              text: "8"
+          - lvgl.label.update:
+              id: widget_fon_minute_d
+              text_font: SEG7
+              text: "8"
+          - lvgl.label.update:
+              id: widget_fon_minute
+              text_font: SEG7
+              text: "8"
+        else:
+          if: 
+            condition:
+              lambda: return (i == 1);
+            then:
+              - lvgl.label.update:
+                  id: widget_hour_d
+                  text_font: SEG14
+              - lvgl.label.update:
+                  id: widget_hour
+                  text_font: SEG14
+              - lvgl.label.update:
+                  id: widget_minute_d
+                  text_font: SEG14
+              - lvgl.label.update:
+                  id: widget_minute
+                  text_font: SEG14
+              - lvgl.label.update:
+                  id: widget_sec
+                  text_font: SEG14
+
+              - lvgl.label.update:
+                  id: widget_fon_hour_d
+                  text_font: SEG14
+                  text: "~"
+              - lvgl.label.update:
+                  id: widget_fon_hour
+                  text_font: SEG14
+                  text: "~"
+              - lvgl.label.update:
+                  id: widget_fon_minute_d
+                  text_font: SEG14
+              - lvgl.label.update:
+                  id: widget_fon_minute
+                  text_font: SEG14
+                  text: "~"
+            else:
+              if: 
+                condition:
+                  lambda: return (i == 2);
+                then:
+                  - lvgl.label.update:
+                      id: widget_hour_d
+                      text_font: Ultra3
+                  - lvgl.label.update:
+                      id: widget_hour
+                      text_font: Ultra3
+                  - lvgl.label.update:
+                      id: widget_minute_d
+                      text_font: Ultra3
+                  - lvgl.label.update:
+                      id: widget_minute
+                      text_font: Ultra3
+                  - lvgl.label.update:
+                      id: widget_sec
+                      text_font: Ultra3
+
+                  - lvgl.label.update:
+                      id: widget_fon_hour_d
+                      text_font: Ultra3
+                      text: "/"
+                  - lvgl.label.update:
+                      id: widget_fon_hour
+                      text_font: Ultra3
+                      text: "/"
+                  - lvgl.label.update:
+                      id: widget_fon_minute_d
+                      text_font: Ultra3
+                      text: "/"
+                  - lvgl.label.update:
+                      id: widget_fon_minute
+                      text_font: Ultra3
+                      text: "/"
+  - platform: template
+    name: select fon
+    entity_category: config
+    icon: mdi:view-grid-compact
+    options:
+     - Сетка
+     - Фон
+     - Фон + сетка
+     - Без фона и сетки
+    initial_option: Сетка
+    optimistic: true
+    restore_value: True
+    on_value:
+      if: 
+        condition:
+          lambda: return (i == 0);
+        then:
+          - lvgl.label.update:
+              id: widget_hour_set_d
+              text: "="
+              text_font: SET
+          - lvgl.label.update:
+              id: widget_hour_set
+              text: "="
+              text_font: SET
+          - lvgl.label.update:
+              id: widget_minute_set_d
+              text: "="
+              text_font: SET
+          - lvgl.label.update:
+              id: widget_minute_set
+              text: "="
+              text_font: SET
+          - lvgl.label.update:
+              id: widget_sec_set
+              text: "="
+              text_font: SET
+
+          - lvgl.label.update:
+              id: widget_fon_hour_d
+              text_color: black
+          - lvgl.label.update:
+              id: widget_fon_hour
+              text_color: black
+          - lvgl.label.update:
+              id: widget_fon_minute_d
+              text_color: black
+          - lvgl.label.update:
+              id: widget_fon_minute
+              text_color: black
+          - globals.set:
+              id: color_f
+              value: (0, 0, 0)
+
+        else:
+          if: 
+            condition:
+              lambda: return (i == 1);
+            then:
+              - lvgl.label.update:
+                  id: widget_fon_hour_d
+                  text_color: color_dark_gray
+              - lvgl.label.update:
+                  id: widget_fon_hour
+                  text_color: color_dark_gray
+              - lvgl.label.update:
+                  id: widget_fon_minute_d
+                  text_color: color_dark_gray
+              - lvgl.label.update:
+                  id: widget_fon_minute
+                  text_color: color_dark_gray
+              - globals.set:
+                  id: color_f
+                  value: color_dark_gray
+
+              - lvgl.label.update:
+                  id: widget_hour_set_d
+                  text: " "
+                  text_font: SET
+              - lvgl.label.update:
+                  id: widget_hour_set
+                  text: " "
+                  text_font: SET
+              - lvgl.label.update:
+                  id: widget_minute_set_d
+                  text: " "
+                  text_font: SET
+              - lvgl.label.update:
+                  id: widget_minute_set
+                  text: " "
+                  text_font: SET
+              - lvgl.label.update:
+                  id: widget_sec_set
+                  text: " "
+                  text_font: SET
+            else:
+              if: 
+                condition:
+                  lambda: return (i == 2);
+                then:
+                  - lvgl.label.update:
+                      id: widget_hour_set_d
+                      text: "="
+                      text_font: SET
+                  - lvgl.label.update:
+                      id: widget_hour_set
+                      text: "="
+                      text_font: SET
+                  - lvgl.label.update:
+                      id: widget_minute_set_d
+                      text: "="
+                      text_font: SET
+                  - lvgl.label.update:
+                      id: widget_minute_set
+                      text: "="
+                      text_font: SET
+                  - lvgl.label.update:
+                      id: widget_sec_set
+                      text: "="
+                      text_font: SET
+
+                  - lvgl.label.update:
+                      id: widget_fon_hour_d
+                      text_color: color_dark_gray
+                  - lvgl.label.update:
+                      id: widget_fon_hour
+                      text_color: color_dark_gray
+                  - lvgl.label.update:
+                      id: widget_fon_minute_d
+                      text_color: color_dark_gray
+                  - lvgl.label.update:
+                      id: widget_fon_minute
+                      text_color: color_dark_gray
+                  - globals.set:
+                      id: color_f
+                      value: color_dark_gray
+                else:
+                  if: 
+                    condition:
+                      lambda: return (i == 3);
+                    then:
+                      - lvgl.label.update:
+                          id: widget_hour_set_d
+                          text: " "
+                          text_font: SET
+                      - lvgl.label.update:
+                          id: widget_hour_set
+                          text: " "
+                          text_font: SET
+                      - lvgl.label.update:
+                          id: widget_minute_set_d
+                          text: " "
+                          text_font: SET
+                      - lvgl.label.update:
+                          id: widget_minute_set
+                          text: " "
+                          text_font: SET
+                      - lvgl.label.update:
+                          id: widget_sec_set
+                          text: " "
+                          text_font: SET
+
+                      - lvgl.label.update:
+                          id: widget_fon_hour_d
+                          text_color: black
+                      - lvgl.label.update:
+                          id: widget_fon_hour
+                          text_color: black
+                      - lvgl.label.update:
+                          id: widget_fon_minute_d
+                          text_color: black
+                      - lvgl.label.update:
+                          id: widget_fon_minute
+                          text_color: black
+                      - globals.set:
+                          id: color_f
+                          value: (0, 0, 0)
+
+  - platform: template
+    name: "Цвет индикации"
+    entity_category: config
+    icon: mdi:palette
+    options:
+      - "Выкл"              # (0, 0, 0) 0
+      - "Белый"             # (255, 255, 255)1
+      - "Красный"           # (255, 0, 0)2
+      - "Синий"             # (0, 0, 255)3
+      - "Морская волна"     # (0, 255, 255)4
+      - "Фуксин"            # (255, 0, 255) 5
+      - "Серый"             # (128, 128, 128)6
+      - "Зеленый"           # (0, 128, 0)7
+      - "Ярко-зеленый"      # (55, 237, 18)8
+      - "Темно-бордовый"    # (128, 0, 0)9
+      - "Темно-синий"       # (0, 0, 128) 10
+      - "Оливковый"         # (128, 128, 0)11
+      - "Фиолетовый"        # (128, 0, 128)12
+      - "Серо-зеленый"      # (80, 100, 80)13
+      - "Желтый"            # (255, 255, 0)14    
+      - "Ярко-желтый"       # (254,250,98) 15
+    initial_option: "Ярко-зеленый"
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            auto call = id(color_clock).turn_on();
+            call.set_transition_length(1000); 
+            switch(i) {
+              case 0:  call.set_rgb(0.0, 0.0, 0.0); break;
+              case 1:  call.set_rgb(1.0, 1.0, 1.0); break;
+              case 2:  call.set_rgb(1.0, 0.0, 0.0); break;
+              case 3:  call.set_rgb(0.0, 0.0, 1.0); break;
+              case 4:  call.set_rgb(0.0, 1.0, 1.0); break;
+              case 5:  call.set_rgb(1.0, 1.0, 0.0); break;
+              case 6:  call.set_rgb(0.5, 0.5, 0.5); break;
+              case 7:  call.set_rgb(0.0, 0.5, 0.0); break;
+              case 8:  call.set_rgb(0.22, 0.93, 0.07); break;
+              case 9:  call.set_rgb(0.5, 0.0, 0.0); break;
+              case 10: call.set_rgb(0.0, 0.0, 0.5); break;
+              case 11: call.set_rgb(0.5, 0.5, 0.0); break;
+              case 12: call.set_rgb(0.5, 0.0, 0.5); break;
+              case 13: call.set_rgb(0.31, 0.39, 0.31); break;
+              case 14: call.set_rgb(1.0, 1.0, 0.0); break;  
+              case 15: call.set_rgb(0.99, 0.98, 0.38); break;
+            }  
+            call.perform();     
+
+#-------------------------------------------
+# TIME
+#-------------------------------------------
+time:
+  - platform: sntp
+    id: sntp_time
+    servers:
+   #  - 192.168.0.108
+     - 0.pool.ntp.org
+
+#  - id: !extend sntp_time
+    on_time_sync:
+      - lvgl.label.update:
+          id: widget_hour_d
+          text: !lambda |-
+            int datehour = id(sntp_time).now().hour;
+            int H = datehour / 10;
+            return std::to_string(H);
+      - lvgl.label.update:
+          id: widget_hour
+          text: !lambda |-
+            int datehour = id(sntp_time).now().hour;
+            int hh = datehour % 10;
+            return std::to_string(hh);
+      - lvgl.label.update:
+          id: widget_minute_d
+          text: !lambda |-
+            int dateminute = id(sntp_time).now().minute;
+            int M = dateminute / 10;
+            return std::to_string(M);
+      - lvgl.label.update:
+          id: widget_minute
+          text: !lambda |-
+            int dateminute = id(sntp_time).now().minute;
+            int mm = dateminute % 10;
+            return std::to_string(mm);
+    on_time:
+      - minutes: '*'
+        seconds: 0
+        then:
+          - lvgl.label.update:
+              id: widget_hour_d
+              text: !lambda |-
+                int datehour = id(sntp_time).now().hour;
+                int H = datehour / 10;
+                return std::to_string(H);
+          - lvgl.label.update:
+              id: widget_hour
+              text: !lambda |-
+                int datehour = id(sntp_time).now().hour;
+                int hh = datehour % 10;
+                return std::to_string(hh);
+          - lvgl.label.update:
+              id: widget_minute_d
+              text: !lambda |-
+                int dateminute = id(sntp_time).now().minute;
+                int M = dateminute / 10;
+                return std::to_string(M);
+          - lvgl.label.update:
+              id: widget_minute
+              text: !lambda |-
+                int dateminute = id(sntp_time).now().minute;
+                int mm = dateminute % 10;
+                return std::to_string(mm);
+                
+      - seconds: '*'
+        then:
+          - lvgl.label.update:
+              id: widget_hour_d
+              text_color: !lambda return id(color_font);
+          - lvgl.label.update:
+              id: widget_hour
+              text_color: !lambda return id(color_font);
+          - lvgl.label.update:
+              id: widget_minute_d
+              text_color: !lambda return id(color_font);
+          - lvgl.label.update:
+              id: widget_minute
+              text_color: !lambda return id(color_font);
+          - lvgl.label.update:
+              id: widget_sec
+              text_color: !lambda |-
+                static int i = 0;
+                i++;
+                if ( i % 2)
+                  return id(color_f);
+                else
+                  return id(color_font);
+
+#-------------------------------------------
+# DISPLAY
+#-------------------------------------------
+display:
+  
+######## display 0 hour dec ########################################################
+  - platform: ili9xxx
+    id: clock_display_0
+    model: st7789v
+    rotation: 180
+    dimensions:
+      height: 320
+      width: 170
+      offset_height: 0
+      offset_width: 35
+    invert_colors: true
+    data_rate: 80MHz
+    cs_pin: 2
+    dc_pin: 
+      number: GPIO16
+      allow_other_uses: true
+    update_interval: 0.1s
+
+######## display  1 hour     ########################################################
+  - platform: ili9xxx
+    id: clock_display_1
+    model: st7789v
+    rotation: 180
+    dimensions:
+      height: 320
+      width: 170
+      offset_height: 0
+      offset_width: 35
+    invert_colors: true
+    data_rate: 80MHz
+    cs_pin: 10
+    dc_pin: 
+      number: GPIO16
+      allow_other_uses: true
+    update_interval: 0.1s
+
+######## display 2 minute dec ########################################################
+  - platform: ili9xxx
+    id: clock_display_2
+    model: st7789v
+    rotation: 180
+    dimensions:
+      height: 320
+      width: 170
+      offset_height: 0
+      offset_width: 35
+    invert_colors: true
+    data_rate: 80MHz
+    cs_pin: 4
+    dc_pin: 
+      number: GPIO16
+      allow_other_uses: true
+    update_interval: 0.1s
+
+######## display 3 minute     ########################################################
+  - platform: ili9xxx
+    id: clock_display_3
+    model: st7789v
+    rotation: 180
+    dimensions:
+      height: 320
+      width: 170
+      offset_height: 0
+      offset_width: 35
+    invert_colors: true
+    data_rate: 80MHz
+    cs_pin: 11
+    dc_pin: 
+      number: GPIO16
+      allow_other_uses: true
+    update_interval: 0.1s
+
+######## display 4 sec     ########################################################
+  - platform: ili9xxx
+    id: clock_display_4
+    model: st7789v
+    rotation: 180
+    dimensions:
+      height: 320
+      width: 170
+      offset_height: 0
+      offset_width: 35
+    invert_colors: true
+    data_rate: 80MHz
+    cs_pin: 43
+    dc_pin: 
+      number: GPIO16
+      allow_other_uses: true
+    update_interval: 0.1s
+
+
+#-------------------------------------------   
+# LVGL
+#-------------------------------------------    
+lvgl:
+######## display 0 hour dec ########################################################
+  - id: lvgl_0
+    displays: 
+      - clock_display_0
+    pages:
+      - id: hour_d_page
+        bg_color: 0x000000 
+        scrollbar_mode: "OFF"
+        scrollable: false
+        widgets:
+          - label:
+              text_font: SEG7
+              align: center
+              text: "8"
+              id: widget_fon_hour_d
+              text_color: color_dark_gray
+          - label:
+              text_font: SEG7
+              align: center
+              text: "8"
+              id: widget_hour_d
+              text_color: color_dark_gray
+          - label:
+              text_font: SET
+              align: center
+              text: "="
+              id: widget_hour_set_d
+              text_color: color_dark_gray
+######## display 1 hour     ########################################################
+  - id: lvgl_1
+    displays: 
+      - clock_display_1
+    pages:
+      - id: hour_page
+        bg_color: 0x000000 
+        scrollbar_mode: "OFF"
+        scrollable: false
+        widgets:
+          - label:
+              text_font: SEG7
+              align: center
+              text: "8"
+              id: widget_fon_hour
+              text_color: color_dark_gray
+          - label:
+              text_font: SEG7
+              align: center
+              text: "8"
+              id: widget_hour
+              text_color: color_dark_gray
+          - label:
+              text_font: SET
+              align: center
+              text: "="
+              id: widget_hour_set
+              text_color: color_dark_gray
+
+######## display 2 minute dec ########################################################          
+  - id: lvgl_2
+    displays: 
+      - clock_display_2
+    pages:
+      - id: minute_d_page
+        bg_color: 0x000000 
+        scrollbar_mode: "OFF"
+        scrollable: false
+        widgets:
+          - label:
+              text_font: SEG7
+              align: center
+              text: "8"
+              id: widget_fon_minute_d
+              text_color: color_dark_gray
+          - label:
+              text_font: SEG7
+              align: center
+              text: "8"
+              id: widget_minute_d
+              text_color: color_dark_gray
+          - label:
+              text_font: SET
+              align: center
+              text: "="
+              id: widget_minute_set_d
+              text_color: color_dark_gray
+
+######## display 3 minute     ########################################################          
+  - id: lvgl_3
+    displays: 
+      - clock_display_3
+    pages:
+      - id: minute_page
+        bg_color: 0x000000 
+        scrollbar_mode: "OFF"
+        scrollable: false
+        widgets:
+          - label:
+              text_font: SEG7
+              align: center
+              text: "8"
+              id: widget_fon_minute
+              text_color: color_dark_gray
+          - label:
+              text_font: SEG7
+              align: center
+              text: "8"
+              id: widget_minute
+              text_color: color_dark_gray
+          - label:
+              text_font: SET
+              align: center
+              text: "="
+              id: widget_minute_set
+              text_color: color_dark_gray
+
+######## display 4 sec       ########################################################          
+  - id: lvgl_4
+    displays: 
+      - clock_display_4
+    pages:
+      - id: sec_page
+        bg_color: 0x000000 
+        scrollbar_mode: "OFF"
+        scrollable: false
+        widgets:
+          - label:
+              text_font: SEG7
+              align: center
+              text: ":"
+              id: widget_sec
+              text_color: color_dark_gray
+          - label:
+              text_font: SET
+              align: center
+              text: "="
+              id: widget_sec_set
+              text_color: color_dark_gray
