@@ -13,7 +13,7 @@
 
 | clock-1                                                    | clock-2                                                   | clock-3                                    |
 |------------------------------------------------------------|-----------------------------------------------------------|--------------------------------------------|
-| ![clock-1](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-1/1639051819484.jpg) | ![clock-2](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-2/1639051819490.jpg) | ![clock-3](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/33.jpg) |
+| ![clock-1](./clock-1/1639051819484.jpg) | ![clock-2](./clock-2/1639051819490.jpg) | ![clock-3](./clock-3/33.jpg) |
 
 
 
@@ -27,7 +27,7 @@
 
 Дисплейный модуль построен на двух TM1637 т.к. в часах стоят 7-ми сегментные 4 разрядные индикаторы с общим анодом (MAX7219 общий катод). Для подключения индикатора влажности используется незадействованный 5 и 6 разряд TM1637. Значок влажности подключен 6 разряду и DP 2-го TM1637
 
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-1/1639051819484.jpg" height="300" alt="Часы">
+<img src="./clock-1/1639051819484.jpg" height="300" alt="Часы">
 
 Версия 2
 ==========
@@ -35,14 +35,14 @@
 
 Дисплейный модуль построен на трех TM1637 т.к. в часах стоят 7-ми сегментные 4 разрядные индикаторы с общим анодом (MAX7219 общий катод). Значок влажности подключен к 3 разряду и DP 3-го TM1637. 
 
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-2/1639051819490.jpg" height="300" alt="Часы">
+<img src="./clock-2/1639051819490.jpg" height="300" alt="Часы">
 
 Версия 3
 ==========
 
 Часы с синхронизацией времени и автоматической регулировкой яркости + датчики температуры, влажности, температуры пола, датчик расхода фильтрованной воды  и температуры, ИК пульт (для включения ТВ). 
 
-<img src="https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/clock-3/33.jpg" height="300" alt="Часы">
+<img src="./clock-3/33.jpg" height="300" alt="Часы">
 
 Дисплейный модуль построен на трех MAX7219 общий катод. Задуманы для крепления под кухонный гарнитур. 3D модель корпуса в папке clock-3.
 
@@ -59,11 +59,11 @@ Wemos D1 mini pin D8  для подключения TM1637 и MAX7219 не ис�
 используется сторонний компонент dynamic_on_time https://github.com/hostcc/esphome-component-dynamic-on-time
 DF-Player, BME-680.
 
-[Умные часы будильник](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/smart-time.yaml)
+[Умные часы будильник](./smart-time.yaml)
 
 
 
 max7219
 ==========
 
-[Часы с эффектом перелистывания цифр](https://github.com/ananyevgv/Esphome-clock-NTP/blob/main/max7219.yaml)
+[Часы с эффектом перелистывания цифр](./max7219.yaml)
