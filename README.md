@@ -53,6 +53,12 @@ Wemos D1 mini pin D8  для подключения TM1637 и MAX7219 не ис�
 
 На home assistant установлен адон Chrony https://github.com/hassio-addons/addon-chrony 
 
+Версия 4
+==========
+
+Часы с синхронизацией времени. 
+
+<img src="./clock-4/clock-4.jpg" height="300" alt="Часы">
 
 Будильник 
 ==========
