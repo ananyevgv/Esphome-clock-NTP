@@ -1,0 +1,133 @@
+##########################################
+##           WEMOS D1 mini              ##
+##  |RS|          |#|     | 1|          ##
+##  |A0|          |#|     | 3|          ##
+##  |D0| CLK      |#|     |D1| scl      ##
+##  |D5| DIO      |#|     |D2| sda      ##
+##  |D6|          |#|     |D3|          ##
+##  |D7|          |#|     |D4|          ##
+##  |D8|          |#|     |GN|          ## 
+##  |3V|          |#|     |5V|          ##
+##########################################
+
+substitutions:
+  name: "clock-4"
+  device_description: "clock-4"
+  room: "Холл"
+  
+esphome:
+  name: "${name}"
+  comment: "${device_description}"
+  on_boot:
+    then:
+      ds1307.read_time:
+        
+esp8266:
+  board: d1_mini
+
+i2c:
+   sda: D2
+   scl: D1
+   scan: true
+
+ota:
+  - platform: esphome
+    password: !secret ota_pass 
+  - platform: web_server
+  
+wifi:
+  networks:
+  - ssid: !secret wifi_ssid
+    password: !secret wifi_password
+  - ssid: Wi-Fi
+    password: 12345678
+  min_auth_mode: WPA2
+  ap:
+    ssid: "clock-Wi-Fi"    
+    password: 12345678
+
+captive_portal:
+  
+#-------------------------------------------
+# Packages
+#------------------------------------------- 
+packages:
+  device_base: !include packages/device_base.yaml
+
+#-------------------------------------------
+# TEXT SENSOR
+#-------------------------------------------
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      icon: mdi:ip
+    ssid:
+      name: "SSID"
+      icon: mdi:access-point-network
+    mac_address:
+      name: "Mac"
+      icon: mdi:lan
+#-------------------------------------------
+# SENSOR
+#-------------------------------------------
+sensor:
+  - platform: wifi_signal
+    name: "Wifi"
+    update_interval: 60s  
+    id: wifi_signal_db
+    entity_category: "diagnostic"
+    
+  # WI-FI Signal
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    id: wifi_signal_percent
+    name: "WiFi Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
+    icon: mdi:wifi
+   
+time:
+  - platform: ds1307
+    id: rtc_time
+    update_interval: never
+
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Moscow
+    servers:
+     - 0.pool.ntp.org
+     - 1.pool.ntp.org
+     - 2.pool.ntp.org
+    on_time_sync:
+      then:
+        ds1307.write_time:
+    on_time:
+      - hours: 0
+        minutes: 0
+        seconds: 0
+        then:
+          ds1307.write_time:
+
+display:
+  - platform: tm1637
+    id: tm1637_c
+    clk_pin: 
+      number: D4
+    dio_pin: D3
+    update_interval: 1s
+    lambda: |-
+      static int i = 0;
+      i++;
+      if ((i % 2) == 0)
+        it.strftime("%H.%M", id(rtc_time).now());
+      else
+        it.strftime("%H%M", id(rtc_time).now());  
+
+#web_server:
+  #port: 80
+ # version: 3
+ # local: true
+    
