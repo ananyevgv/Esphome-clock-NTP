@@ -36,15 +36,10 @@ ota:
   - platform: web_server
   
 wifi:
-  networks:
-  - ssid: !secret wifi_ssid
-    password: !secret wifi_password
-  - ssid: Wi-Fi
-    password: konvoy4071
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
   min_auth_mode: WPA2
-  ap:
-    ssid: "clock-Wi-Fi"    
-    password: konvoy4071
+
 
 captive_portal:
   
