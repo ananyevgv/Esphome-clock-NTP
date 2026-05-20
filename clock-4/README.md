@@ -1,4 +1,4 @@
 Часы с синхронизацией времени.
 Четвертая версия
 
-<img src=./clock-4.jpg" height="300" alt="Часы">
+<img src="./clock-4.jpg" height="300" alt="Часы">
