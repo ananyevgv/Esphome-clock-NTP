@@ -1,6 +1,6 @@
 # Четвертая версия
 
-[![ESPHome]([https://img.shields.io/github/v/release/esphome/esphome?label=ESPHome&color=green&logo=esphome)](https://esphome.io/)
+[![ESPHome](https://img.shields.io/github/v/release/esphome/esphome?label=ESPHome&color=green&logo=esphome)(https://esphome.io/)
 [![Platform](https://img.shields.io/badge/platform-ESP8266-green)](https://www.espressif.com/en/products/socs/esp8266)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
