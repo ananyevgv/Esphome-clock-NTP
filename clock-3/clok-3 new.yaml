@@ -533,21 +533,27 @@ display:
     lambda: |-
       it.set_intensity(id(brightness).state);
       static int i = 0;
+display:
+  - platform: max7219
+    cs_pin: 16
+    num_chips: 3
+    lambda: |-
+      it.set_intensity(id(brightness).state);
+      static int i = 0;
       i++;
-        it.strftime(14,"%S", id(sntp_time).now());
-        it.printf(16,"%.1f~" , id(kitchen_t).state);
-        it.printf(20,"%.1fh" , id(kitchen_h).state);
+      it.strftime(14,"%S", id(sntp_time).now());
+      it.printf(16,"%.1f~" , id(kitchen_t).state);
+      it.printf(20,"%.1fh" , id(kitchen_h).state);
 
-        if ((id(drink_water_yearly).state) > 10000)
-          it.printf(8,"ErrorF");
-        else 
-          it.printf(8,"%5.1f" , id(drink_water_yearly).state);
+      if ((id(drink_water_yearly).state) > 10000)
+        it.printf(8,"ErrorF");
+      else 
+        it.printf(8,"%5.1f" , id(drink_water_yearly).state);
  
-        if ((i % 2) == 0) 
-          it.strftime(0,"%H.%M", id(sntp_time).now());
-        else 
-          it.strftime(0,"%H%M", id(sntp_time).now()); 
-
+      if ((i % 2) == 0) 
+        it.strftime(4,"%H.%M", id(sntp_time).now());
+      else 
+        it.strftime(4,"%H%M", id(sntp_time).now()); 
 time:
   - platform: sntp
     id: sntp_time
