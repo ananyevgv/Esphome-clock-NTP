@@ -5,7 +5,7 @@
 
 [license-shield]: https://img.shields.io/static/v1?label=License&message=MIT&color=orange&logo=license
 [license]: https://opensource.org/licenses/MIT
-[esphome-release-shield]: https://img.shields.io/static/v1?label=ESPHome&message=2026.6&color=green&logo=esphome
+[esphome-release-shield]: https://img.shields.io/github/v/release/esphome/esphome?label=ESPHome&color=green&logo=esphome
 [esphome-release]: https://GitHub.com/esphome/esphome/releases/
 
 **Семейство умных часов** с синхронизацией времени, автоматической регулировкой яркости и расширенным функционалом — от датчиков до интернет-радио.
