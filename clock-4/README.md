@@ -1,10 +1,10 @@
-# Clock-G2 — умные часы на ESP8266
+# Четвертая версия
 
 [![ESPHome](https://img.shields.io/badge/ESPHome-2024.4.0-blue)](https://esphome.io/)
 [![Platform](https://img.shields.io/badge/platform-ESP8266-green)](https://www.espressif.com/en/products/socs/esp8266)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
-Четвертая версия
+
 
 Умные часы с автоматической регулировкой яркости и синхронизацией времени через интернет.  
 Собраны на базе **WEMOS D1 mini** с использованием **ESPHome**.
