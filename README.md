@@ -16,7 +16,7 @@
 
 | Версия 1 | Версия 2 | Версия 3 | Версия 4 |
 |----------|----------|----------|----------|
-| ![clock-1](./clock-1/1639051819484.jpg) | ![clock-2](./clock-2/1639051819490.jpg) | ![clock-3](./clock-3/33.jpg) | ![clock-4](./clock-4/clock-4.jpg) |
+| <img src="./clock-1/1639051819484.jpg" width="250"> | <img src="./clock-2/1639051819490.jpg" width="250"> | <img src="./clock-3/33.jpg" width="250"> | <img src="./clock-4/clock-4.jpg" width="250"> |
 
 ---
 
