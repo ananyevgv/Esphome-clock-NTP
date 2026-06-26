@@ -43,7 +43,7 @@ wifi:
   min_auth_mode: WPA2
   ap:
     ssid: "clock-Wi-Fi"    
-    password: konvoy4071
+    password: 12345678
 
 captive_portal:
 
